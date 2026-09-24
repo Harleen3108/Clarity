@@ -161,7 +161,7 @@ export function HowToUse() {
           <h2
             id="how-heading"
             className="m-0 font-display font-bold text-text"
-            style={{ fontSize: 56, letterSpacing: "-0.03em" }}
+            style={{ fontSize: 42, letterSpacing: "-0.03em" }}
           >
             From upload to answer in four steps.
           </h2>

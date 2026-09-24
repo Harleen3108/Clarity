@@ -76,7 +76,7 @@ export function About() {
           <h2
             id="about-heading"
             className="m-0 font-display font-bold text-text"
-            style={{ fontSize: 64, lineHeight: 1.04, letterSpacing: "-0.03em" }}
+            style={{ fontSize: 46, lineHeight: 1.06, letterSpacing: "-0.03em" }}
           >
             One search box for everything your company has written down.
           </h2>

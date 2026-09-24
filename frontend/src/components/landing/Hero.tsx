@@ -1,5 +1,5 @@
 "use client";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { LandingNav } from "./LandingNav";
@@ -21,6 +21,7 @@ const STEPS = [
 export function Hero() {
   const router = useRouter();
   const sectionRef = useRef<HTMLElement>(null);
+  const canvasRef = useRef<HTMLDivElement>(null);
   const stackInnerRef = useRef<HTMLDivElement | null>(null);
   const planeRefs = useRef<HTMLDivElement[]>([]);
   const pillarRefs = useRef<HTMLDivElement[]>([]);
@@ -79,6 +80,19 @@ export function Hero() {
 
   useScrollProgress(sectionRef, onFrame);
 
+  // Scale the fixed 1440px design canvas down to fit narrower desktops so the
+  // 3D stack on the right is never cropped. Capped at 1 so it never enlarges.
+  useEffect(() => {
+    const fit = () => {
+      if (!canvasRef.current) return;
+      const s = Math.min(1, window.innerWidth / 1440);
+      canvasRef.current.style.transform = `scale(${s})`;
+    };
+    fit();
+    window.addEventListener("resize", fit);
+    return () => window.removeEventListener("resize", fit);
+  }, []);
+
   const handleMouseMove = (ev: React.MouseEvent) => {
     mouse.current = {
       x: (ev.clientX / window.innerWidth) * 2 - 1,
@@ -101,8 +115,13 @@ export function Hero() {
       >
         <div className="clarity-grid absolute inset-0" aria-hidden="true" />
 
-        {/* 1440px design canvas, centred */}
-        <div className="relative mx-auto h-full" style={{ width: 1440 }}>
+        {/* 1440px design canvas, centred and scaled to fit the viewport width */}
+        <div className="flex h-full justify-center">
+          <div
+            ref={canvasRef}
+            className="relative h-full flex-shrink-0"
+            style={{ width: 1440, transformOrigin: "top center" }}
+          >
           <LandingNav />
 
           {/* left: hero copy */}
@@ -123,12 +142,12 @@ export function Hero() {
 
             <h1
               className="m-0 font-display font-bold"
-              style={{ fontSize: 92, lineHeight: 0.96, letterSpacing: "-0.04em" }}
+              style={{ fontSize: 64, lineHeight: 0.98, letterSpacing: "-0.03em" }}
             >
               Answers you can see through.
             </h1>
 
-            <p className="m-0 text-[20px] leading-[1.55] text-text-2" style={{ maxWidth: 560 }}>
+            <p className="m-0 text-[17px] leading-[1.55] text-text-2" style={{ maxWidth: 520 }}>
               Clarity is an enterprise document search engine that reads your policies, runbooks
               and contracts two ways, fuses the results, and answers only from what it found.
               Every sentence is cited to the page. If the evidence isn&apos;t there, it says so.
@@ -216,6 +235,7 @@ export function Hero() {
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8A9098" strokeWidth="1.8" strokeLinecap="round">
               <path d="M12 5 V19 M6 13 L12 19 L18 13" />
             </svg>
+          </div>
           </div>
         </div>
       </div>

@@ -34,7 +34,7 @@ export function TryIt() {
           <h2
             id="try-heading"
             className="m-0 font-display font-bold"
-            style={{ fontSize: 80, lineHeight: 1, letterSpacing: "-0.04em" }}
+            style={{ fontSize: 56, lineHeight: 1.02, letterSpacing: "-0.03em" }}
           >
             Ask your documents
             <br />
