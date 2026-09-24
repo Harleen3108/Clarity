@@ -150,9 +150,9 @@ export default function WorkspacePage() {
   });
 
   return (
-    <div className="flex h-screen min-h-[780px] flex-col overflow-hidden">
+    <div className="flex h-screen min-h-[780px] flex-col overflow-x-auto overflow-y-hidden">
       <TopBar />
-      <div className="flex min-h-0 flex-1">
+      <div className="flex min-h-0 min-w-[900px] flex-1">
         <Sources s={s} docs={docs} error={docsError} totalChunks={totalChunks} trace={trace} onChange={refreshDocs} />
 
         <main className="flex min-w-0 flex-1 flex-col gap-4 overflow-hidden px-9 pb-5 pt-6">
@@ -285,7 +285,7 @@ function Sources({
   const shown = docs.filter((d) => d.document_name.toLowerCase().includes(filter.toLowerCase()));
 
   return (
-    <aside className="flex min-h-0 w-[280px] shrink-0 flex-col border-r border-line bg-panel">
+    <aside className="flex min-h-0 w-[220px] shrink-0 flex-col border-r border-line bg-panel xl:w-[280px]">
       <div className="flex flex-col gap-3.5 px-[18px] pb-3.5 pt-5">
         <div className="flex items-center justify-between">
           <h2 className="font-display text-[18px] font-semibold">Sources</h2>
@@ -649,7 +649,7 @@ function Analytics({
   const m = mix(trace.top5);
 
   return (
-    <aside className="flex w-[340px] shrink-0 flex-col gap-[18px] overflow-auto border-l border-line bg-panel p-5">
+    <aside className="flex w-[260px] shrink-0 flex-col gap-[18px] overflow-auto border-l border-line bg-panel p-5 xl:w-[340px]">
       <div className="flex items-center justify-between">
         <h2 className="font-display text-[18px] font-semibold">Analytics</h2>
         <span className={`rounded-[10px] border border-border px-2 py-[3px] font-mono text-[11px] ${busy ? "text-ok" : "text-text-2"}`}>
