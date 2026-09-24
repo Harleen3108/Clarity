@@ -11,7 +11,7 @@ from app.core.config import settings
 
 
 def _configure():
-    genai.configure(api_key=settings.GEMINI_API_KEY)
+    genai.configure(api_key=settings.GEMINI_API_KEY, transport="rest")
 
 
 SYSTEM_PROMPT = """You are an enterprise document search assistant. Your job is to answer questions STRICTLY using the provided evidence chunks.
@@ -108,7 +108,7 @@ def generate_answer(query: str, chunks: List[dict]) -> Tuple[str, bool, float, L
         last_err = None
         for attempt in range(3):
             try:
-                response = model.generate_content(prompt, generation_config=gen_config)
+                response = model.generate_content(prompt, generation_config=gen_config, request_options={"timeout": 30})
                 raw = response.text.strip()
                 break
             except gexc.ResourceExhausted as e:

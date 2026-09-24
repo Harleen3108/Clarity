@@ -2,6 +2,57 @@
 @tailwind components;
 @tailwind utilities;
 
+/* The prototypes rely on the browser's default line-height, not preflight's 1.5. */
+html {
+  line-height: normal;
+}
+
+html,
 body {
-  @apply bg-gray-950 text-gray-100;
+  height: 100%;
+  background: theme("colors.bg");
+  color: theme("colors.text.DEFAULT");
+  font-family: theme("fontFamily.body");
+}
+
+a {
+  color: theme("colors.text.2");
+  text-decoration: none;
+}
+a:hover {
+  color: theme("colors.text.DEFAULT");
+}
+
+svg {
+  display: inline;
+  vertical-align: baseline;
+}
+
+.sr {
+  position: absolute;
+  left: -9999px;
+}
+
+/* Static design pages (/, /library, /xray) use light links. */
+.static-page a {
+  color: #eceae4;
+}
+.static-page a:hover {
+  color: #ffffff;
+}
+
+/* The static prototypes rely on the browser's default content-box sizing
+   (preflight switches everything to border-box). UA defaults kept for controls. */
+.static-page,
+.static-page *,
+.static-page *::before,
+.static-page *::after {
+  box-sizing: content-box;
+}
+.static-page button,
+.static-page select {
+  box-sizing: border-box;
+}
+.static-page input::placeholder {
+  color: #757575;
 }

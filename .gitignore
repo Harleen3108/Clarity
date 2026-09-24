@@ -18,3 +18,10 @@ qdrant_data/
 
 # Local uploads
 uploads/
+frontend/tsconfig.tsbuildinfo
+node_modules/
+.next/
+__pycache__/
+*.pyc
+.env
+.env.local
