@@ -25,7 +25,7 @@ const jetBrainsMono = JetBrains_Mono({
 // ============================================================================
 
 export const metadata: Metadata = {
-  title: "Clarity — Answers you can see through",
+  title: "clarity-rag-search-engine",
   description:
     "Enterprise document search with hybrid dense-sparse retrieval, RRF and hallucination guardrails.",
 };
