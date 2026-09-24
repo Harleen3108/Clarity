@@ -4,14 +4,14 @@ import re
 import time
 from typing import List, Dict, Tuple
 
-import google.generativeai as genai
-from google.api_core import exceptions as gexc
+import requests
 
 from app.core.config import settings
 
-
-def _configure():
-    genai.configure(api_key=settings.GEMINI_API_KEY)
+# Call the REST API directly instead of through google-generativeai: the SDK's
+# transport (even set to "rest") was hanging past its own timeout on this
+# network, while plain `requests` gets a clean response every time.
+GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
 
 
 SYSTEM_PROMPT = """You are an enterprise document search assistant. Your job is to answer questions STRICTLY using the provided evidence chunks.
@@ -76,8 +76,6 @@ def _system_confidence(chunks: List[dict], citations_returned: List[dict], groun
 
 def generate_answer(query: str, chunks: List[dict]) -> Tuple[str, bool, float, List[dict]]:
     """Returns (answer, grounded, confidence, citations)."""
-    _configure()
-
     if not chunks:
         return (
             "I couldn't find sufficient evidence in the indexed documents to answer this question.",
@@ -97,35 +95,43 @@ def generate_answer(query: str, chunks: List[dict]) -> Tuple[str, bool, float, L
     evidence_json = _build_evidence_json(chunks)
     prompt = RAG_PROMPT_TEMPLATE.format(evidence_json=evidence_json, query=query)
 
-    try:
-        model = genai.GenerativeModel(
-            model_name=settings.GEMINI_MODEL,
-            system_instruction=SYSTEM_PROMPT,
-        )
-        gen_config = genai.types.GenerationConfig(temperature=0.1, max_output_tokens=1024)
-        # Free-tier per-minute limits are short-lived; retry a couple of times so a
-        # brief spike self-heals instead of surfacing an error during a demo.
-        last_err = None
-        for attempt in range(3):
+    payload = {
+        "system_instruction": {"parts": [{"text": SYSTEM_PROMPT}]},
+        "contents": [{"parts": [{"text": prompt}]}],
+        "generationConfig": {"temperature": 0.1, "maxOutputTokens": 1024},
+    }
+    headers = {"Content-Type": "application/json", "x-goog-api-key": settings.GEMINI_API_KEY}
+
+    # Gemini's free tier returns transient 429/503 under load. Rotate through
+    # several models, a few rounds, so one overloaded model doesn't fail the query.
+    models = [settings.GEMINI_MODEL, "gemini-3.6-flash", "gemini-flash-latest", "gemini-3.1-flash-lite", "gemini-3.5-flash-lite"]
+    models = list(dict.fromkeys(models))
+    raw = None
+    last_err = None
+    for rnd in range(2):
+        for m in models:
             try:
-                response = model.generate_content(prompt, generation_config=gen_config)
-                raw = response.text.strip()
-                break
-            except gexc.ResourceExhausted as e:
-                last_err = e
-                if attempt < 2:
-                    time.sleep(8)
-                    continue
-                raise
-        else:
-            raise last_err
-    except Exception as e:
-        return (
-            f"The answer service is temporarily unavailable ({type(e).__name__}). Please try again.",
-            False,
-            0.0,
-            [],
+                resp = requests.post(GEMINI_URL.format(model=m), headers=headers, json=payload, timeout=25)
+                if resp.status_code == 200:
+                    raw = resp.json()["candidates"][0]["content"]["parts"][0]["text"].strip()
+                    break
+                last_err = f"{m}: HTTP {resp.status_code}"
+            except (requests.RequestException, KeyError, IndexError, ValueError) as e:
+                last_err = f"{m}: {type(e).__name__}"
+        if raw is not None:
+            break
+        time.sleep(3)
+    if raw is None:
+        # LLM unavailable: fall back to the best retrieved passages, verbatim, so
+        # the user still gets an evidence-backed result instead of an error.
+        top = chunks[0]
+        answer = (
+            f"(Gemini is overloaded right now, so this is the best matching passage from your documents, unsummarised: "
+            f"{last_err}) " + top["text"][:800]
         )
+        cite = {"document": top["document_name"], "document_id": top["document_id"], "chunk_id": top["chunk_id"],
+                "page": top.get("page"), "section": top.get("section"), "text": top["text"][:200]}
+        return answer, True, _system_confidence(chunks, [cite], True), [cite]
 
     # Strip markdown fences if present
     raw = re.sub(r"^```(?:json)?\s*", "", raw)

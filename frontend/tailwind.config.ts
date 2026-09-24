@@ -10,42 +10,38 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        brand: {
-          50: "#eff6ff",
-          500: "#3b82f6",
-          600: "#2563eb",
-          700: "#1d4ed8",
-        },
-
-        // ===== Clarity landing design tokens (added for landing-page branch) =====
         bg: "#0A0C0F",
         panel: "#0C0E12",
-        surface: "#12151A",
-        "surface-2": "#161A20",
-        "surface-3": "#181C22",
+        surface: { DEFAULT: "#12151A", 2: "#161A20", 3: "#181C22" },
         line: "#1A1E24",
-        border: "#262B33",
-        "border-strong": "#2E343D",
-        text: "#ECEAE4",
-        "text-2": "#A3A9B1",
-        "text-3": "#8A9098",
-        bm25: "#FF9F43", // keyword / orange
-        dense: "#6EA8FF", // meaning / blue
+        border: { DEFAULT: "#262B33", strong: "#2E343D" },
+        text: { DEFAULT: "#ECEAE4", 2: "#A3A9B1", 3: "#8A9098" },
+        bm25: "#FF9F43",
+        dense: "#6EA8FF",
+        both: "#ECEAE4",
         ok: "#7EE0A1",
         warn: "#F5C451",
         danger: "#E0736A",
-        // ========================================================================
       },
       fontFamily: {
-        // ===== Clarity landing fonts (wired via next/font CSS vars in layout.tsx) =
-        display: ["var(--font-space-grotesk)", "sans-serif"],
-        body: ["var(--font-ibm-plex-sans)", "system-ui", "sans-serif"],
-        mono: ["var(--font-jetbrains-mono)", "monospace"],
-        // ========================================================================
+        display: ["var(--font-display)", "sans-serif"],
+        body: ["var(--font-body)", "system-ui", "sans-serif"],
+        mono: ["var(--font-mono)", "monospace"],
       },
       letterSpacing: {
         tighter2: "-0.03em",
         tighter3: "-0.04em",
+      },
+      keyframes: {
+        pulse: { "50%": { boxShadow: "0 0 0 5px rgba(236,234,228,.05)" } },
+        fade: {
+          from: { opacity: "0", transform: "translateY(6px)" },
+          to: { opacity: "1", transform: "none" },
+        },
+      },
+      animation: {
+        pulse: "pulse 1s ease-in-out infinite",
+        fade: "fade .4s ease-out",
       },
     },
   },

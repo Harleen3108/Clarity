@@ -4,7 +4,7 @@ from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
     GEMINI_API_KEY: str = os.getenv("GEMINI_API_KEY", "")
-    GEMINI_MODEL: str = "gemini-flash-lite-latest"
+    GEMINI_MODEL: str = os.getenv("GEMINI_MODEL", "gemini-3.5-flash")
 
     # QDRANT_MODE: "local" = embedded on-disk (no server/Docker needed), "server" = remote URL
     QDRANT_MODE: str = os.getenv("QDRANT_MODE", "local")

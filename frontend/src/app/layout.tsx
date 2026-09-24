@@ -1,28 +1,28 @@
 import type { Metadata } from "next";
+import localFont from "next/font/local";
 import "./globals.css";
 
-// ===== Clarity landing fonts (added for landing-page branch) =================
-import { Space_Grotesk, IBM_Plex_Sans, JetBrains_Mono } from "next/font/google";
-
-const spaceGrotesk = Space_Grotesk({
-  subsets: ["latin"],
-  weight: ["500", "600", "700"],
-  variable: "--font-space-grotesk",
-  display: "swap",
+const display = localFont({
+  src: "../fonts/SpaceGrotesk.woff2",
+  weight: "300 700",
+  variable: "--font-display",
+  adjustFontFallback: false,
+  fallback: ["sans-serif"],
 });
-const ibmPlexSans = IBM_Plex_Sans({
-  subsets: ["latin"],
-  weight: ["400", "500"],
-  variable: "--font-ibm-plex-sans",
-  display: "swap",
+const body = localFont({
+  src: "../fonts/IBMPlexSans.woff2",
+  weight: "100 700",
+  variable: "--font-body",
+  adjustFontFallback: false,
+  fallback: ["system-ui", "sans-serif"],
 });
-const jetBrainsMono = JetBrains_Mono({
-  subsets: ["latin"],
-  weight: ["400", "500"],
-  variable: "--font-jetbrains-mono",
-  display: "swap",
+const mono = localFont({
+  src: "../fonts/JetBrainsMono.woff2",
+  weight: "100 800",
+  variable: "--font-mono",
+  adjustFontFallback: false,
+  fallback: ["monospace"],
 });
-// ============================================================================
 
 export const metadata: Metadata = {
   title: "clarity-rag-search-engine",
@@ -32,10 +32,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html
-      lang="en"
-      className={`${spaceGrotesk.variable} ${ibmPlexSans.variable} ${jetBrainsMono.variable}`}
-    >
+    <html lang="en" className={`${display.variable} ${body.variable} ${mono.variable}`}>
       <body>{children}</body>
     </html>
   );
