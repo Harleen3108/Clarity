@@ -1,5 +1,7 @@
 # 🔍 Hybrid RAG Engine
 
+**Live demo → [clarity-rag-engine.vercel.app](https://clarity-rag-engine.vercel.app)**
+
 > Enterprise document search combining **lexical (BM25)** and **dense semantic** retrieval, fused with **Reciprocal Rank Fusion (RRF)**, with **grounded answer generation** and **hallucination guardrails**.
 
 Built for the **MeetMux Hackathon**. This is not a chatbot — it's an **enterprise search + retrieval + grounded generation** system with a transparent explainability layer that proves hybrid retrieval is actually working.
