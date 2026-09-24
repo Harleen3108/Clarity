@@ -2,6 +2,83 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  color-scheme: dark;
+}
+
+/* Prototypes rely on browser default line-height, not preflight's 1.5 */
+html {
+  line-height: normal;
+}
+
+html,
 body {
-  @apply bg-gray-950 text-gray-100;
+  height: 100%;
+  background: theme("colors.bg");
+  color: theme("colors.text.DEFAULT");
+  font-family: theme("fontFamily.body");
+  @apply antialiased;
+  /* clip (not hidden) prevents horizontal scroll from 1440px hero canvas
+     without creating a scroll container that breaks position: sticky */
+  overflow-x: clip;
+}
+
+a {
+  color: theme("colors.text.2");
+  text-decoration: none;
+}
+a:hover {
+  color: theme("colors.text.DEFAULT");
+}
+
+svg {
+  display: inline;
+  vertical-align: baseline;
+}
+
+/* Screen-reader only utility used by workspace */
+.sr {
+  position: absolute;
+  left: -9999px;
+}
+
+/* 48px background grid used on hero and CTA */
+.clarity-grid {
+  background-image: linear-gradient(#161a20 1px, transparent 1px),
+    linear-gradient(90deg, #161a20 1px, transparent 1px);
+  background-size: 48px 48px;
+  opacity: 0.55;
+}
+
+/* Scroll reveals (driven by useRevealOnScroll) */
+[data-reveal] {
+  opacity: 0;
+  transform: translateY(28px);
+  transition: opacity 0.7s ease, transform 0.7s ease;
+  will-change: opacity, transform;
+}
+[data-reveal].reveal-in {
+  opacity: 1;
+  transform: none;
+}
+[data-reveal-3d] {
+  transform: translateZ(0) !important;
+  transition: transform 1s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+[data-reveal-3d].reveal3d-in {
+  transform: var(--depth, translateZ(0)) !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+  [data-reveal] {
+    opacity: 1;
+    transform: none;
+  }
 }

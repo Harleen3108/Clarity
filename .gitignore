@@ -18,3 +18,10 @@ qdrant_data/
 
 # Local uploads
 uploads/
+
+# Logs
+*.log
+
+# Local env overrides (set real values in Vercel / Render dashboards)
+.env.local
+frontend/.env.local

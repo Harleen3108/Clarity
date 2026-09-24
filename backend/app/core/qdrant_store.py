@@ -26,14 +26,20 @@ _client_singleton: Optional[QdrantClient] = None
 
 
 def get_client() -> QdrantClient:
-    """Singleton client. In local (embedded) mode Qdrant holds a file lock,
-    so a single shared instance must be reused across all requests."""
     global _client_singleton
     if _client_singleton is None:
         if settings.QDRANT_MODE == "local":
             _client_singleton = QdrantClient(path=settings.QDRANT_PATH)
         else:
-            _client_singleton = QdrantClient(url=settings.QDRANT_URL)
+            if not settings.QDRANT_URL:
+                raise RuntimeError(
+                    "QDRANT_URL must be set when QDRANT_MODE=server. "
+                    "Add it to your .env file."
+                )
+            kwargs: dict = {"url": settings.QDRANT_URL}
+            if settings.QDRANT_API_KEY:
+                kwargs["api_key"] = settings.QDRANT_API_KEY
+            _client_singleton = QdrantClient(**kwargs)
     return _client_singleton
 
 
@@ -65,7 +71,6 @@ def upsert_chunks(client: QdrantClient, chunks: List[ChunkSchema], embeddings: L
         }
         points.append(PointStruct(id=point_id, vector=vector, payload=payload))
 
-    # Upload in batches of 100
     for i in range(0, len(points), 100):
         client.upsert(collection_name=settings.QDRANT_COLLECTION, points=points[i:i+100])
 
@@ -107,7 +112,6 @@ def delete_by_document_id(client: QdrantClient, document_id: str):
 
 def list_documents(client: QdrantClient) -> List[Dict]:
     ensure_collection(client)
-    # Scroll all points and aggregate by document_id
     docs: Dict[str, Dict] = {}
     offset = None
     while True:
@@ -131,8 +135,6 @@ def list_documents(client: QdrantClient) -> List[Dict]:
 
 
 def fetch_all_chunks(client: QdrantClient) -> List[ChunkSchema]:
-    """Read every chunk back from Qdrant (the source of truth) so the in-memory
-    BM25 index can be rebuilt on startup after a restart."""
     ensure_collection(client)
     chunks: List[ChunkSchema] = []
     offset = None

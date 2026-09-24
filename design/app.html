@@ -1,0 +1,534 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Clarity — workspace prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* ================= DESIGN TOKENS ================= */
+:root{
+  --bg:#0A0C0F; --panel:#0C0E12; --surface:#12151A; --surface-2:#161A20; --surface-3:#181C22;
+  --line:#1A1E24; --border:#262B33; --border-strong:#2E343D;
+  --text:#ECEAE4; --text-2:#A3A9B1; --text-3:#8A9098;
+  --bm25:#FF9F43; --dense:#6EA8FF; --both:#ECEAE4;
+  --ok:#7EE0A1; --warn:#F5C451; --danger:#E0736A;
+  --display:'Space Grotesk',sans-serif; --body:'IBM Plex Sans',system-ui,sans-serif; --mono:'JetBrains Mono',monospace;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font-family:var(--body)}
+a{color:var(--text-2);text-decoration:none} a:hover{color:var(--text)}
+button{font-family:var(--body)}
+.sr{position:absolute;left:-9999px}
+.mono{font-family:var(--mono)}
+.label{font-family:var(--mono);font-size:11px;color:var(--text-2);letter-spacing:.02em}
+
+/* ================= LAYOUT ================= */
+.app{height:100vh;min-height:780px;display:flex;flex-direction:column;overflow:hidden}
+.topbar{height:56px;flex-shrink:0;display:flex;align-items:center;justify-content:space-between;padding:0 20px;border-bottom:1px solid var(--line);background:var(--panel)}
+.brand{display:flex;align-items:center;gap:10px;color:var(--text)}
+.brand b{font-family:var(--display);font-size:19px}
+.crumb{display:flex;align-items:center;gap:16px}
+.pill{font-family:var(--mono);font-size:11px;color:var(--text-2);border:1px solid var(--border);border-radius:6px;padding:3px 8px}
+.topnav{display:flex;align-items:center;gap:20px;font-size:14px}
+.user{display:flex;align-items:center;gap:10px;padding:6px 12px 6px 6px;border:1px solid var(--border);border-radius:20px;color:var(--text);font-size:13px}
+.avatar{width:26px;height:26px;border-radius:13px;background:var(--dense);color:var(--bg);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:500}
+.row{flex:1;display:flex;min-height:0}
+
+/* ================= LEFT: SOURCES ================= */
+.sources{width:280px;flex-shrink:0;border-right:1px solid var(--line);background:var(--panel);display:flex;flex-direction:column;min-height:0}
+.sources-head{padding:20px 18px 14px;display:flex;flex-direction:column;gap:14px}
+.h2{margin:0;font-family:var(--display);font-size:18px;font-weight:600}
+.btn-ghost{height:32px;padding:0 12px;border:1px solid var(--border-strong);border-radius:8px;background:transparent;color:var(--text);font-size:13px;font-weight:500;cursor:pointer}
+.filter{height:36px;padding:0 12px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text);font-size:13px;outline:none}
+.src-list{flex:1;overflow:auto;padding:0 10px 10px;display:flex;flex-direction:column;gap:2px}
+.grp{display:flex;justify-content:space-between;padding:12px 8px 6px;font-family:var(--mono);font-size:11px;color:var(--text-2)}
+.doc{display:flex;align-items:center;gap:10px;padding:8px;border-radius:8px;cursor:pointer;transition:background .2s}
+.doc.lit{background:var(--surface-2)}
+.doc input{width:15px;height:15px;margin:0;accent-color:var(--text);flex-shrink:0}
+.doc .meta{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1}
+.doc .name{font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.doc.off .name{color:#6B7178}
+.doc .sub{font-size:11px;color:var(--text-3)}
+.tag{font-family:var(--mono);font-size:10px;color:var(--text-2);border:1px solid #343B45;border-radius:4px;padding:1px 5px;flex-shrink:0}
+.hit{font-family:var(--mono);font-size:10px;padding:2px 6px;border-radius:4px;color:var(--bg);flex-shrink:0;display:none}
+.doc.lit .hit{display:inline-block}
+.locked{display:flex;align-items:center;gap:10px;padding:9px 8px;color:var(--text-3);font-size:13px}
+.src-foot{padding:14px 18px;border-top:1px solid var(--line);display:flex;justify-content:space-between;font-family:var(--mono);font-size:11px;color:var(--text-2)}
+
+/* ================= CENTRE ================= */
+.center{flex:1;min-width:0;padding:24px 36px 20px;display:flex;flex-direction:column;gap:16px;overflow:hidden}
+.state{flex:1;display:none;flex-direction:column;gap:16px;min-height:0}
+.state.on{display:flex}
+.h1{margin:0;font-family:var(--display);font-weight:700;font-size:40px;letter-spacing:-.03em}
+.lede{margin:0;font-size:16px;color:var(--text-2)}
+.legend{display:flex;gap:18px;font-family:var(--mono);font-size:11px;color:var(--text-2);align-items:center}
+.legend i{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:6px;vertical-align:-1px}
+.chip{height:40px;padding:0 16px;border:1px solid var(--border-strong);border-radius:20px;background:var(--surface);color:var(--text);font-size:14px;cursor:pointer}
+.chip:hover{border-color:#4A525E}
+.bubble{align-self:flex-end;max-width:520px;background:var(--surface-3);border:1px solid var(--border);border-radius:16px 16px 4px 16px;padding:12px 16px;font-size:15px}
+.stages{display:flex;gap:8px;flex-wrap:wrap}
+.stage{display:flex;align-items:center;gap:8px;height:34px;padding:0 12px;border-radius:17px;font-size:13px;border:1px solid var(--border);color:var(--text-3)}
+.stage .t{font-family:var(--mono);font-size:11px;color:var(--text-3)}
+.dot{width:10px;height:10px;border-radius:5px;border:2px solid #3A414B;flex-shrink:0}
+.stage.done,.pipe.done{color:var(--text)} .stage.done{background:var(--surface-2)}
+.stage.done .dot,.pipe.done .dot{background:var(--text);border-color:var(--text)}
+.stage.active,.pipe.active{color:var(--text)} .stage.active{border-color:var(--text)}
+.stage.active .dot,.pipe.active .dot{border-color:var(--text);box-shadow:0 0 0 3px rgba(236,234,228,.15);animation:pulse 1s ease-in-out infinite}
+.stage.skipped span:nth-child(2),.pipe.skipped .n{text-decoration:line-through}
+@keyframes pulse{50%{box-shadow:0 0 0 5px rgba(236,234,228,.05)}}
+.busy-head{display:flex;justify-content:space-between;align-items:baseline}
+.busy-title{font-family:var(--display);font-size:22px;font-weight:600}
+.caption{margin:0;font-size:13px;color:var(--text-2)}
+
+.card{background:var(--surface);border:1px solid #2A3038;border-radius:16px;padding:20px 24px;display:flex;flex-direction:column;gap:14px}
+.badge{display:flex;align-items:center;gap:10px;font-family:var(--mono);font-size:12px}
+.badge .g{width:9px;height:9px;border-radius:5px;background:var(--ok)}
+.answer p{margin:0;font-size:16px;line-height:1.6}
+.answer{display:flex;flex-direction:column;gap:10px;min-height:52px}
+.code{font-family:var(--mono);font-size:13px;background:#1E232A;padding:2px 6px;border-radius:4px}
+.cite{font-family:var(--mono);font-size:12px;color:var(--text);border:1px solid #3A414B;border-radius:4px;padding:0 4px}
+.srcs{display:flex;gap:10px}
+.srccard{flex:1;display:flex;flex-direction:column;gap:4px;padding:10px 14px;border:1px solid #343B45;border-radius:10px}
+.srccard .k{font-family:var(--mono);font-size:11px;color:var(--text-2)} .srccard .v{font-size:14px;color:var(--text)}
+.mapwrap{display:flex;gap:20px;align-items:flex-start}
+.map{width:464px;height:186px;overflow:hidden;flex-shrink:0;border:1px solid var(--line);border-radius:12px}
+.map > div{transform:scale(.6);transform-origin:12px 12px}
+.fade{animation:fade .4s ease-out}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.gate{position:relative;height:8px;border-radius:4px;background:#1E232A}
+.gate .fill{position:absolute;left:0;top:0;bottom:0;border-radius:4px}
+.gate .mark{position:absolute;left:35%;top:-5px;bottom:-5px;width:2px}
+
+/* Ask bar */
+.ask{display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--border-strong);border-radius:14px;padding:8px 8px 8px 16px;flex-shrink:0}
+.ask input{flex:1;background:transparent;border:0;outline:none;color:var(--text);font-size:16px;font-family:var(--body)}
+.ask button{height:44px;padding:0 20px;border:0;border-radius:10px;background:var(--text);color:var(--bg);font-size:15px;font-weight:500;cursor:pointer}
+.ask button:disabled{background:#2A3038;color:var(--text-2);cursor:default}
+
+/* ================= RIGHT: ANALYTICS ================= */
+.analytics{width:340px;flex-shrink:0;border-left:1px solid var(--line);background:var(--panel);padding:20px;display:flex;flex-direction:column;gap:18px;overflow:auto}
+.an-head{display:flex;align-items:center;justify-content:space-between}
+.an-tag{font-family:var(--mono);font-size:11px;padding:3px 8px;border-radius:10px;border:1px solid var(--border);color:var(--text-2)}
+.an-tag.live{color:var(--ok)}
+.an{display:none;flex-direction:column;gap:16px} .an.on{display:flex}
+.tiles{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.tile{display:flex;flex-direction:column;gap:4px;padding:12px;border:1px solid #1E232A;border-radius:10px}
+.tile .k{font-family:var(--mono);font-size:10px;color:var(--text-2)}
+.tile .v{font-family:var(--display);font-size:26px;font-weight:600}
+.tile.wide{grid-column:span 2}
+.box{display:flex;flex-direction:column;gap:8px;padding:14px;border:1px solid #1E232A;border-radius:10px}
+.box .k{font-family:var(--mono);font-size:10px;color:var(--text-2)}
+.bar{display:flex;height:10px;gap:2px} .bar div{border-radius:3px}
+.gap-row{display:flex;justify-content:space-between;padding:10px 12px;border:1px solid #1E232A;border-radius:8px;font-size:13px}
+.pipe{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--text-3)}
+.pipe .n{flex:1} .pipe .t{font-family:var(--mono);font-size:11px;color:var(--text-3)}
+
+/* ================= CHUNK GRID ================= */
+.cg{position:relative;width:748px;height:300px;flex-shrink:0}
+.cg-cells{position:absolute;left:0;top:0;display:grid;grid-template-columns:repeat(36,12px);gap:3px}
+.cg-cells div{width:12px;height:12px;border-radius:2px;background:#161B21;transition:background .15s}
+.cg-beam,.cg-glow{position:absolute;top:-6px;height:279px;pointer-events:none;display:none}
+.cg-beam{width:2px;background:var(--text);opacity:.8;border-radius:1px}
+.cg-glow{width:40px;background:rgba(236,234,228,.07);border-radius:4px}
+.cg-lines{position:absolute;left:0;top:0;pointer-events:none;overflow:visible}
+.cg-rail{position:absolute;left:577px;top:0;width:171px;display:flex;flex-direction:column;gap:10.5px}
+.slot{height:45px;border:1px dashed #2A3038;border-radius:8px;display:flex;align-items:center;gap:8px;padding:0 10px;color:#5A6068}
+.slot .sd{width:8px;height:8px;border-radius:4px;border:1px solid #3A414B;flex-shrink:0}
+.slot .sl{display:flex;flex-direction:column;gap:2px;min-width:0}
+.slot .a{font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.slot .b{font-family:var(--mono);font-size:10px;color:var(--text-2)}
+.slot.full{border-style:solid;border-color:#343B45;background:#14181D;color:var(--text)}
+.slot.full .sd{border:0}
+.slot.top{border-color:var(--text);background:#1E232B}
+.cg-bands{position:absolute;left:0;top:276px;width:537px;display:flex;gap:3px}
+.cg-bands div{height:4px;border-radius:2px}
+.cg-cap{position:absolute;top:285px;font-family:var(--mono);font-size:10px;color:var(--text-3)}
+@media (prefers-reduced-motion: reduce){.cg-cells div{transition:none}}
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- ================= TOP BAR ================= -->
+<header class="topbar">
+  <div class="crumb">
+    <a class="brand" href="index.html">
+      <svg width="24" height="24" viewBox="0 0 28 28" fill="none" stroke-width="1.8"><circle cx="10.5" cy="14" r="7.5" stroke="#FF9F43"/><circle cx="17.5" cy="14" r="7.5" stroke="#6EA8FF"/></svg>
+      <b>Clarity</b>
+    </a>
+    <span style="color:#3A414B">/</span>
+    <span style="font-size:14px;color:#CFCDC7">Northwind Bank</span>
+    <span class="pill">workspace</span>
+  </div>
+  <nav class="topnav">
+    <a href="library.html">Library</a>
+    <a href="xray.html">Retrieval X-ray</a>
+    <span class="user"><span class="avatar">PN</span>Priya · engineering</span>
+  </nav>
+</header>
+
+<div class="row">
+
+<!-- ================= LEFT: SOURCES ================= -->
+<aside class="sources">
+  <div class="sources-head">
+    <div style="display:flex;align-items:center;justify-content:space-between">
+      <h2 class="h2">Sources</h2>
+      <button class="btn-ghost" type="button">+ Add</button>
+    </div>
+    <label for="filter" class="sr">Filter sources</label>
+    <input id="filter" class="filter" type="text" placeholder="Filter 214 documents">
+  </div>
+  <div class="src-list" id="srcList"></div>
+  <div class="src-foot"><span>6,380 chunks indexed</span><span style="color:var(--ok)">● synced</span></div>
+</aside>
+
+<!-- ================= CENTRE ================= -->
+<main class="center">
+
+  <!-- idle -->
+  <section class="state on" id="st-idle">
+    <div style="display:flex;flex-direction:column;gap:8px;padding-top:12px">
+      <h1 class="h1">Ask across 214 documents.</h1>
+      <p class="lede">Every chunk is read two ways: by exact keyword and by meaning. Then the two rankings are fused.</p>
+    </div>
+    <div class="legend"><span>CORPUS</span><span><i style="background:var(--bm25)"></i>keyword match</span><span><i style="background:var(--dense)"></i>meaning match</span><span><i style="background:var(--both)"></i>both</span></div>
+    <div id="gridIdle"></div>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <span class="label">TRY</span>
+      <div style="display:flex;gap:10px">
+        <button class="chip" type="button" data-q="How do I fix error PAY-GW-504?">How do I fix error PAY-GW-504?</button>
+        <button class="chip" type="button" data-q="What is the CEO's favourite movie?">What is the CEO's favourite movie?</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- scanning / fusing -->
+  <section class="state" id="st-busy">
+    <div class="bubble" id="busyQ"></div>
+    <div class="stages" id="stagePills"></div>
+    <div class="busy-head"><span class="busy-title" id="busyTitle"></span><span class="mono" style="font-size:12px;color:var(--text-2)" id="busySub"></span></div>
+    <div id="gridBusy"></div>
+    <p class="caption">Orange cells matched the keywords, blue cells matched the meaning, white cells matched both. Lines pull the best evidence into the top 5.</p>
+  </section>
+
+  <!-- answered -->
+  <section class="state" id="st-answer">
+    <div class="bubble" id="ansQ"></div>
+    <article class="card fade">
+      <div class="badge"><span class="g"></span><span style="color:var(--ok)" id="groundLbl">GROUNDED · 94%</span><span style="color:var(--text-2)">· 5 chunks · 1.41 s</span></div>
+      <div class="answer" id="answerText"></div>
+      <div class="srcs">
+        <a class="srccard" href="xray.html"><span class="k">[1] BM25 #1 · DENSE #3</span><span class="v">IT Runbook — Payments · p.12</span></a>
+        <a class="srccard" href="xray.html"><span class="k">[2] DENSE #1 · BM25 #4</span><span class="v">Incident INC-2291 · p.3</span></a>
+      </div>
+    </article>
+    <div class="mapwrap fade">
+      <div class="map"><div id="gridAnswer"></div></div>
+      <div style="display:flex;flex-direction:column;gap:8px;padding-top:6px">
+        <span class="label">SOURCE MAP</span>
+        <span style="font-size:14px;line-height:1.55;color:#CFCDC7">Where the evidence came from, out of 6,380 chunks. The two white cells were found by both searches, so fusion ranked them first.</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- refused -->
+  <section class="state" id="st-refused">
+    <div class="bubble" id="refQ"></div>
+    <article class="card fade" style="padding:22px 24px;gap:16px">
+      <div class="badge" style="color:var(--text-2)">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ECEAE4" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 8V13"/><path d="M12 16V16.5"/></svg>
+        INSUFFICIENT EVIDENCE · LLM NOT CALLED
+      </div>
+      <p style="margin:0;font-family:var(--display);font-size:22px;line-height:1.35;font-weight:600">I couldn't find sufficient evidence in the indexed documents to answer this question.</p>
+      <div style="display:flex;flex-direction:column;gap:8px;max-width:460px">
+        <div class="gate"><div class="fill" style="width:21%;background:#8A8F96"></div><div class="mark" style="background:var(--text)"></div></div>
+        <div class="mono" style="display:flex;justify-content:space-between;font-size:11px;color:var(--text-2)"><span>best evidence 0.21</span><span>gate 0.35</span></div>
+      </div>
+      <span style="font-size:13px;color:var(--text-2)">Logged as a knowledge gap for the workspace admin.</span>
+    </article>
+    <div class="map fade"><div id="gridRefused"></div></div>
+  </section>
+
+  <!-- ask bar -->
+  <div class="ask">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#A3A9B1" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20L16 16"/></svg>
+    <label for="q" class="sr">Ask your documents</label>
+    <input id="q" type="text" value="How do I fix error PAY-GW-504?" placeholder="Ask anything about your sources…">
+    <span class="pill">hybrid + rerank</span>
+    <button id="askBtn" type="button">Ask</button>
+  </div>
+</main>
+
+<!-- ================= RIGHT: ANALYTICS ================= -->
+<aside class="analytics">
+  <div class="an-head"><h2 class="h2">Analytics</h2><span class="an-tag" id="anTag">sample data</span></div>
+
+  <div class="an on" id="an-idle">
+    <div class="tiles">
+      <div class="tile"><span class="k">QUERIES TODAY</span><span class="v">48</span></div>
+      <div class="tile"><span class="k">P50 LATENCY</span><span class="v">1.4s</span></div>
+      <div class="tile"><span class="k">ANSWERED</span><span class="v">41</span></div>
+      <div class="tile"><span class="k">REFUSED</span><span class="v">7</span></div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <span class="label">WHERE CITED EVIDENCE CAME FROM</span>
+      <div class="bar"><div style="width:47%;background:var(--both)"></div><div style="width:22%;background:var(--bm25)"></div><div style="flex:1;background:var(--dense)"></div></div>
+      <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text-2)"><span>both 47%</span><span style="color:var(--bm25)">keyword 22%</span><span style="color:var(--dense)">meaning 31%</span></div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <span class="label">KNOWLEDGE GAPS · refused questions</span>
+      <div class="gap-row"><span>Work-from-home policy</span><span class="mono" style="color:var(--text-2)">12</span></div>
+      <div class="gap-row"><span>Home loan interest rates</span><span class="mono" style="color:var(--text-2)">5</span></div>
+      <div class="gap-row"><span>Office parking</span><span class="mono" style="color:var(--text-2)">3</span></div>
+    </div>
+  </div>
+
+  <div class="an" id="an-busy">
+    <div class="tiles">
+      <div class="tile wide"><span class="k">CHUNKS TRAVERSED</span><span class="v" style="font-size:30px"><span id="kTrav">0</span> <span style="font-size:16px;color:var(--text-3)">/ 6,380</span></span></div>
+      <div class="tile" style="border-color:#3A2E22"><span class="k" style="color:var(--bm25)">BM25 CANDIDATES</span><span class="v" style="font-size:24px" id="kBm">0</span></div>
+      <div class="tile" style="border-color:#22304A"><span class="k" style="color:var(--dense)">DENSE CANDIDATES</span><span class="v" style="font-size:24px" id="kDn">0</span></div>
+      <div class="tile wide" style="border-color:#343B45"><span class="k">FOUND BY BOTH</span><span class="v" style="font-size:24px" id="kBoth">0</span></div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:8px"><span class="label">PIPELINE</span><div id="pipeList" style="display:flex;flex-direction:column;gap:8px"></div></div>
+  </div>
+
+  <div class="an" id="an-answer">
+    <div class="box"><div style="display:flex;justify-content:space-between"><span class="k">GROUNDEDNESS</span><span class="mono" style="font-size:12px;color:var(--ok)">94%</span></div>
+      <div class="gate"><div class="fill" style="width:94%;background:var(--ok)"></div></div>
+      <span style="font-size:12px;color:var(--text-2)">3 of 3 sentences supported by a cited chunk</span></div>
+    <div class="box"><span class="k">EXACT-CODE GUARD</span>
+      <div style="display:flex;align-items:center;gap:8px;font-size:13px"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#7EE0A1" stroke-width="2" stroke-linecap="round"><path d="M5 12L10 17L19 7"/></svg><span><span class="mono">PAY-GW-504</span> found verbatim in [1]</span></div></div>
+    <div class="box"><span class="k">EVIDENCE GATE</span>
+      <div class="gate"><div class="fill" style="width:94%;background:var(--text)"></div><div class="mark" style="background:var(--bg);top:-4px;bottom:-4px"></div></div>
+      <div class="mono" style="display:flex;justify-content:space-between;font-size:11px;color:var(--text-2)"><span>best 0.94</span><span>gate 0.35 · passed</span></div></div>
+    <div class="box"><div style="display:flex;justify-content:space-between"><span class="k">LATENCY</span><span class="mono" style="font-size:11px">1.41s</span></div>
+      <div class="bar" style="height:8px"><div style="width:2%;background:var(--text-2)"></div><div style="width:2%;background:var(--bm25)"></div><div style="width:3%;background:var(--dense)"></div><div style="width:10%;background:#8A8F96"></div><div style="flex:1;background:#3E444C"></div></div>
+      <span class="mono" style="font-size:11px;color:var(--text-2)">retrieval 69ms · rerank 140ms · llm 1.2s</span></div>
+    <div class="box"><span class="k">EVIDENCE MIX · top 5</span>
+      <div style="display:flex;justify-content:space-between;font-size:13px"><span>both</span><span style="color:var(--bm25)">keyword</span><span style="color:var(--dense)">meaning</span></div>
+      <div style="display:flex;justify-content:space-between;font-family:var(--display);font-size:20px;font-weight:600"><span>2</span><span>2</span><span>1</span></div></div>
+  </div>
+
+  <div class="an" id="an-refused">
+    <div class="box"><span class="k">EVIDENCE GATE</span>
+      <div class="gate"><div class="fill" style="width:21%;background:#8A8F96"></div><div class="mark" style="background:var(--text);top:-4px;bottom:-4px"></div></div>
+      <div class="mono" style="display:flex;justify-content:space-between;font-size:11px;color:var(--text-2)"><span>best 0.21</span><span>gate 0.35 · failed</span></div></div>
+    <div class="box"><span class="k">LLM</span><span style="font-size:14px">Skipped. Nothing to ground an answer on.</span></div>
+    <div class="box"><span class="k">LATENCY</span><span style="font-family:var(--display);font-size:24px;font-weight:600">69ms</span></div>
+    <div class="box"><span class="k">KNOWLEDGE GAP</span><span style="font-size:14px">Added to the admin's gap list.</span></div>
+  </div>
+</aside>
+</div>
+</div>
+
+<script>
+/* =====================================================================
+   CLARITY WORKSPACE PROTOTYPE
+   Everything below MOCK_TRACE is real UI logic. In the real app, replace
+   MOCK_TRACE with the `trace` event from POST /query/stream (see UI_SPEC).
+   Grid layout: 36 columns x 18 rows, column-major: grid_index = col*18 + row.
+   ===================================================================== */
+const COLS = 36, ROWS = 18, P = 15, RAIL_X = 577, SLOT_H = 45, SLOT_GAP = 10.5;
+const COLOR = { bm25: '#FF9F43', dense: '#6EA8FF', both: '#ECEAE4' };
+const SOFT  = { bm25: 'rgba(255,159,67,0.42)', dense: 'rgba(110,168,255,0.42)' };
+const RING  = { bm25: 'rgba(255,159,67,0.28)', dense: 'rgba(110,168,255,0.28)', both: 'rgba(236,234,228,0.22)' };
+const TYPE_NAME = { bm25: 'keyword match', dense: 'meaning match', both: 'keyword + meaning' };
+const BANDS = [5, 4, 7, 3, 3, 4, 3, 3, 4];           // chunks-per-document columns
+const SCAN_MS = 2000, FUSE_MS = 1200;
+
+// ---- MOCK TRACE (replace with API data) ----
+const gi = (c, r) => c * ROWS + r;
+const MOCK_TRACE = {
+  top5: [ // final order = rank
+    { grid_index: gi(12, 4),  type: 'both',  label: 'IT Runbook p.12',  score: '0.94', rank: 0, doc: 'runbook', cite: '[1]' },
+    { grid_index: gi(17, 10), type: 'both',  label: 'INC-2291 p.3',     score: '0.88', rank: 1, doc: 'inc',     cite: '[2]' },
+    { grid_index: gi(24, 13), type: 'dense', label: 'Gateway SLA p.5',  score: '0.41', rank: 2, doc: 'sla',     cite: 'top 5' },
+    { grid_index: gi(20, 2),  type: 'bm25',  label: 'Error code index', score: '0.37', rank: 3, doc: 'err',     cite: 'top 5' },
+    { grid_index: gi(27, 7),  type: 'bm25',  label: 'Payments FAQ p.4', score: '0.12', rank: 4, doc: 'faq',     cite: 'top 5' }
+  ],
+  candidates: (() => { // other chunks in the BM25 / dense top-30 lists
+    let seed = 11; const rnd = () => (seed = (seed * 1103515245 + 12345) % 2147483648) / 2147483648;
+    const m = {}; for (let i = 0; i < 34; i++) { const c = Math.floor(rnd() * COLS), r = Math.floor(rnd() * ROWS); m[gi(c, r)] = rnd() < .5 ? 'bm25' : 'dense'; } return m;
+  })()
+};
+
+// ---- CHUNK GRID COMPONENT ----
+function createGrid(host) {
+  host.innerHTML = `<div class="cg"><div class="cg-cells"></div><div class="cg-glow"></div><div class="cg-beam"></div>
+    <svg class="cg-lines" width="748" height="300"></svg><div class="cg-rail"></div><div class="cg-bands"></div>
+    <span class="cg-cap" style="left:0">each cell is one chunk · grouped by document</span><span class="cg-cap cap2" style="left:577px"></span></div>`;
+  const root = host.firstChild, cellsEl = root.querySelector('.cg-cells');
+  const cells = []; // cells[grid_index] -> element ; DOM order is row-major for CSS grid
+  const band = []; BANDS.forEach((n, i) => { for (let k = 0; k < n; k++) band.push(i); });
+  for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) { const d = document.createElement('div'); cellsEl.appendChild(d); cells[gi(c, r)] = d; }
+  const bandsEl = root.querySelector('.cg-bands');
+  BANDS.forEach(n => { const d = document.createElement('div'); d.style.width = (n * P - 3) + 'px'; bandsEl.appendChild(d); });
+  const cache = [];
+  return function paint(phase, progress, nohits) {
+    const hits = nohits ? [] : MOCK_TRACE.top5;
+    const hitMap = {}; hits.forEach(h => hitMap[h.grid_index] = h);
+    const found = phase === 'found';
+    const sc = phase === 'scan' ? Math.floor(progress * (COLS + 2)) - 1 : (found ? 999 : -999);
+    for (let c = 0; c < COLS; c++) for (let r = 0; r < ROWS; r++) {
+      const idx = gi(c, r), h = hitMap[idx], cd = MOCK_TRACE.candidates[idx];
+      const beam = phase === 'scan' && (c === sc || c === sc - 1), visited = found || c < sc - 1;
+      let bg = band[c] % 2 ? '#181E25' : '#161B21', sh = 'none';
+      if (found) bg = cd ? '#1B2129' : '#12161B'; else if (beam) bg = '#3C4856'; else if (visited) bg = cd ? SOFT[cd] : '#1E252D';
+      if (h && (visited || beam)) { bg = COLOR[h.type]; sh = '0 0 0 3px ' + RING[h.type]; }
+      const key = bg + sh; if (cache[idx] !== key) { cache[idx] = key; cells[idx].style.background = bg; cells[idx].style.boxShadow = sh; }
+    }
+    // beam
+    const showBeam = phase === 'scan' && sc >= 0 && sc <= COLS, x = sc * P + 12;
+    root.querySelector('.cg-beam').style.display = root.querySelector('.cg-glow').style.display = showBeam ? 'block' : 'none';
+    root.querySelector('.cg-beam').style.left = x + 'px'; root.querySelector('.cg-glow').style.left = (x - 40) + 'px';
+    // bands
+    [...bandsEl.children].forEach((d, i) => d.style.background = (i === 2 && !nohits && (found || sc > 9)) ? '#5A6068' : (i % 2 ? '#20252C' : '#2A3038'));
+    // lines + rail
+    const visible = hits.filter(h => found || Math.floor(h.grid_index / ROWS) <= sc).sort((a, b) => a.grid_index - b.grid_index);
+    const slotOf = h => found ? h.rank : visible.indexOf(h);
+    root.querySelector('.cg-lines').innerHTML = visible.map(h => {
+      const c = Math.floor(h.grid_index / ROWS), r = h.grid_index % ROWS, y2 = slotOf(h) * (SLOT_H + SLOT_GAP) + SLOT_H / 2;
+      return `<line x1="${c * P + 6}" y1="${r * P + 6}" x2="${RAIL_X}" y2="${y2}" stroke="${COLOR[h.type]}" stroke-width="1" opacity="${found ? .75 : .5}"/>`;
+    }).join('');
+    root.querySelector('.cg-rail').innerHTML = [0, 1, 2, 3, 4].map(i => {
+      const h = visible.find(v => slotOf(v) === i);
+      if (!h) return `<div class="slot"><span class="sd"></span><div class="sl"><span class="a">${nohits && found ? 'No match above the gate' : '#' + (i + 1) + ' waiting'}</span><span class="b">${nohits && found ? '—' : 'top 5 evidence'}</span></div></div>`;
+      return `<div class="slot full ${found && h.rank < 2 ? 'top' : ''}"><span class="sd" style="background:${COLOR[h.type]}"></span><div class="sl"><span class="a">${found ? '#' + (h.rank + 1) + ' ' : ''}${h.label}</span><span class="b">${found ? 'rerank ' + h.score : TYPE_NAME[h.type]}</span></div></div>`;
+    }).join('');
+    root.querySelector('.cap2').textContent = found ? (nohits ? 'nothing passed the gate' : 'fused by RRF · reranked') : 'evidence found so far';
+  };
+}
+
+// ---- SOURCES (mock) ----
+const SOURCES = [
+  { h: 'COMPANY-WIDE', n: 4 },
+  { id: 'leave25', name: 'Leave Policy 2025', meta: '8 pages · 64 chunks' },
+  { id: 'leave23', name: 'Leave Policy 2023', meta: '3 pages · 18 chunks', tag: 'superseded' },
+  { id: 'fin09', name: 'Expense Policy FIN-09', meta: '5 pages · 41 chunks' },
+  { id: 'sop', name: 'Customer Support SOP', meta: '6 pages · 47 chunks' },
+  { h: 'ENGINEERING', n: 72 },
+  { id: 'runbook', name: 'IT Runbook — Payments', meta: '24 pages · 412 chunks' },
+  { id: 'inc', name: 'Incident INC-2291', meta: '4 pages · 18 chunks' },
+  { id: 'err', name: 'Error code index', meta: '9 pages · 88 chunks' },
+  { id: 'sla', name: 'Gateway SLA', meta: '7 pages · 52 chunks' },
+  { id: 'faq', name: 'Payments FAQ', meta: '6 pages · 49 chunks' },
+  { h: 'LENDING', n: 12 },
+  { id: 'hl', name: 'Home Loan LEND-HL-04', meta: '5 pages · 39 chunks' },
+  { h: 'HR', n: 41 },
+  { locked: true }
+];
+const srcList = document.getElementById('srcList');
+srcList.innerHTML = SOURCES.map(s => {
+  if (s.h) return `<div class="grp"><span>${s.h}</span><span>${s.n}</span></div>`;
+  if (s.locked) return `<div class="locked"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#8A9098" stroke-width="1.8"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0V11"/></svg><div style="display:flex;flex-direction:column;gap:2px"><span>HR folder</span><span style="font-size:11px">No access for your role</span></div></div>`;
+  return `<label class="doc" data-id="${s.id}"><input type="checkbox" checked><div class="meta"><span class="name" ${s.tag ? 'style="color:var(--text-2)"' : ''}>${s.name}</span><span class="sub">${s.meta}</span></div><span class="hit"></span>${s.tag ? `<span class="tag">${s.tag}</span>` : ''}</label>`;
+}).join('');
+srcList.addEventListener('change', e => e.target.closest('.doc').classList.toggle('off', !e.target.checked));
+
+// ---- STAGES ----
+const STAGES = [['Embed query', '18ms'], ['BM25 search', '12ms'], ['Dense search', '38ms'], ['RRF fusion', '1ms'], ['Rerank', '140ms'], ['Generate', '1.2s']];
+function stageState(i, s) {
+  if (s.phase === 'idle') return 'pending';
+  if (s.phase === 'answer') return i === 5 && s.refused ? 'skipped' : 'done';
+  if (s.phase === 'fuse') return i <= 3 ? 'done' : (s.refused ? 'skipped' : (i === 4 ? 'active' : 'pending'));
+  if (i === 0) return s.progress > .06 ? 'done' : 'active';
+  return i <= 2 ? 'active' : 'pending';
+}
+
+// ---- ANSWER (streamed word by word) ----
+const ANSWER = [
+  [{ t: 'PAY-GW-504 means the payment gateway timed out waiting for the card processor.' }, { cite: '[1]' }],
+  [{ t: 'Check the processor status page, restart the pool with' }, { code: 'paygw pool --restart' }, { t: ', then flush the token cache. If errors last more than 15 minutes, declare SEV-1.' }, { cite: '[1]' }, { cite: '[2]' }]
+];
+const TOKENS = ANSWER.map(p => p.flatMap(seg => seg.t ? seg.t.split(/(?<= )/) : [seg]));
+
+// ---- STATE MACHINE ----
+const S = { phase: 'idle', progress: 0, refused: false, asked: '', streamed: 0 };
+const $ = id => document.getElementById(id);
+const grids = { idle: createGrid($('gridIdle')), busy: createGrid($('gridBusy')), answer: createGrid($('gridAnswer')), refused: createGrid($('gridRefused')) };
+
+function render() {
+  const busy = S.phase === 'scan' || S.phase === 'fuse';
+  const answered = S.phase === 'answer' && !S.refused, refusedDone = S.phase === 'answer' && S.refused;
+  $('st-idle').classList.toggle('on', S.phase === 'idle');
+  $('st-busy').classList.toggle('on', busy);
+  $('st-answer').classList.toggle('on', answered);
+  $('st-refused').classList.toggle('on', refusedDone);
+  $('an-idle').classList.toggle('on', S.phase === 'idle');
+  $('an-busy').classList.toggle('on', busy);
+  $('an-answer').classList.toggle('on', answered);
+  $('an-refused').classList.toggle('on', refusedDone);
+  $('anTag').textContent = S.phase === 'idle' ? 'sample data' : busy ? '● live' : 'this query';
+  $('anTag').classList.toggle('live', busy);
+  $('askBtn').disabled = busy; $('askBtn').textContent = busy ? 'Searching…' : 'Ask';
+  ['busyQ', 'ansQ', 'refQ'].forEach(id => $(id).textContent = S.asked);
+
+  const pills = STAGES.map(([n, t], i) => { const k = stageState(i, S); return { n, k, t: k === 'done' ? t : k === 'active' ? '…' : k === 'skipped' ? 'skipped' : '' }; });
+  $('stagePills').innerHTML = pills.map(p => `<div class="stage ${p.k}"><span class="dot"></span><span>${p.n}</span><span class="t">${p.t}</span></div>`).join('');
+  $('pipeList').innerHTML = pills.map(p => `<div class="pipe ${p.k}"><span class="dot"></span><span class="n">${p.n}</span><span class="t">${p.t}</span></div>`).join('');
+
+  const sc = S.phase === 'scan' ? Math.floor(S.progress * (COLS + 2)) - 1 : 999;
+  if (busy) {
+    $('busyTitle').textContent = S.phase === 'scan' ? 'Traversing chunks…' : S.refused ? 'Nothing passed the evidence gate' : 'Fusing and reranking…';
+    $('busySub').textContent = S.phase === 'scan' ? 'BM25 + dense, in parallel' : S.refused ? 'best 0.21 < gate 0.35' : '60 candidates → RRF → top 5';
+    grids.busy(S.phase === 'scan' ? 'scan' : 'found', S.progress, S.refused);
+    const pc = Math.min(S.progress, 1);
+    $('kTrav').textContent = Math.round(pc * 6380).toLocaleString('en-US');
+    $('kBm').textContent = $('kDn').textContent = S.phase === 'fuse' ? 30 : Math.min(30, Math.round(pc * 34));
+    $('kBoth').textContent = S.refused ? 0 : MOCK_TRACE.top5.filter(h => h.type === 'both' && (S.phase === 'fuse' || Math.floor(h.grid_index / ROWS) <= sc)).length;
+  }
+  // source hit badges
+  const byDoc = {}; MOCK_TRACE.top5.forEach(h => byDoc[h.doc] = h);
+  document.querySelectorAll('.doc').forEach(el => {
+    const h = byDoc[el.dataset.id];
+    const lit = !!h && !S.refused && S.phase !== 'idle' && (S.phase !== 'scan' || Math.floor(h.grid_index / ROWS) <= sc);
+    el.classList.toggle('lit', lit);
+    if (h) { const b = el.querySelector('.hit'); b.style.background = COLOR[h.type]; b.textContent = S.phase === 'answer' ? h.cite : 'match'; }
+  });
+  if (answered) {
+    let left = S.streamed;
+    $('answerText').innerHTML = TOKENS.map(tok => {
+      const out = []; for (const x of tok) { if (left-- <= 0) break; out.push(typeof x === 'string' ? x : x.code ? ` <span class="code">${x.code}</span>` : ` <span class="cite">${x.cite}</span>`); }
+      return out.length ? `<p>${out.join('')}</p>` : '';
+    }).join('');
+  }
+}
+
+let raf = null, timers = [];
+function ask(q) {
+  q = (q ?? $('q').value).trim(); if (!q) return;
+  $('q').value = q;
+  cancelAnimationFrame(raf); timers.forEach(clearTimeout); timers = [];
+  Object.assign(S, { phase: 'scan', progress: 0, asked: q, streamed: 0,
+    refused: /movie|ceo|capital|salary|weather|favou?rite|cricket/i.test(q) }); // prototype only: real app uses the API's gate
+  const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const t0 = performance.now();
+  const step = now => {
+    S.progress = reduced ? 1 : Math.min(1, (now - t0) / SCAN_MS);
+    render();
+    if (S.progress < 1) { raf = requestAnimationFrame(step); return; }
+    S.phase = 'fuse'; render();
+    timers.push(setTimeout(() => {
+      S.phase = 'answer'; render();
+      if (!S.refused) { // simulate SSE token stream
+        const total = TOKENS.reduce((a, t) => a + t.length, 0);
+        const tick = () => { S.streamed++; render(); if (S.streamed < total) timers.push(setTimeout(tick, 35)); };
+        tick();
+      }
+    }, reduced ? 0 : FUSE_MS));
+  };
+  raf = requestAnimationFrame(step);
+}
+$('askBtn').onclick = () => ask();
+$('q').addEventListener('keydown', e => { if (e.key === 'Enter' && !$('askBtn').disabled) ask(); });
+document.querySelectorAll('.chip').forEach(b => b.onclick = () => ask(b.dataset.q));
+const urlQ = new URLSearchParams(location.search).get('q');
+render(); grids.idle('idle', 0, false); grids.answer('found', 1, false); grids.refused('found', 1, true);
+if (urlQ) ask(urlQ);
+</script>
+</body>
+</html>

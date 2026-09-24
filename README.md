@@ -16,7 +16,7 @@ Built for the **MeetMux Hackathon**. This is not a chatbot — it's an **enterpr
 
 ## ✨ Features
 
-- **Hybrid retrieval** — runs dense (semantic) and BM25 (keyword) search in parallel, then merges with RRF. Catches both *"what's our leave policy?"* (semantic) and *"error code ERR_4021"* (exact keyword).
+- **Hybrid retrieval** — runs dense (semantic) and BM25 (keyword) search in parallel, then merges with RRF. Catches both _"what's our leave policy?"_ (semantic) and _"error code ERR_4021"_ (exact keyword).
 - **Grounded generation** — the LLM answers **only** from retrieved evidence and cites every source (document → page → section → chunk).
 - **Hallucination guardrails** — abstains with a clear message when evidence is insufficient, instead of making things up.
 - **System-calculated confidence** — confidence is computed from retrieval scores + citation coverage, **not** hallucinated by the LLM.
@@ -37,6 +37,7 @@ User → Next.js → FastAPI → Hybrid Retrieval
 ```
 
 ### Ingestion pipeline
+
 ```
 Upload → Parse (PDF/DOCX/TXT) → Heading-aware chunking → Dense embedding
        → BM25 indexing → Qdrant upsert
@@ -46,15 +47,15 @@ Upload → Parse (PDF/DOCX/TXT) → Heading-aware chunking → Dense embedding
 
 ## 🧠 Key design decisions
 
-| Decision | Choice | Why |
-|---|---|---|
-| **Sparse index** | `rank_bm25` in-memory | Simplest to build; rebuilt on ingest/delete. No extra service. |
-| **Dense embeddings** | `all-MiniLM-L6-v2` (384-dim) | Fast, local, no API cost, strong quality for its size. |
-| **Fusion** | Custom RRF (k=60) | Rank-based, so it ignores incompatible score scales between cosine and BM25 — and we control the trace for the insights panel. |
-| **Vector store** | Qdrant (embedded local mode) | Real vector DB semantics with zero infra; swaps to server mode via one env var. |
-| **LLM** | Gemini 1.5 Flash | Generous free tier, fast, good instruction-following for JSON output. |
-| **Confidence** | System-calculated | `0.6 · (avg RRF, normalized) + 0.4 · (citation coverage)` — never trust an LLM to score itself. |
-| **Abstention** | Pre-LLM evidence gate | If no chunks survive fusion, returns the abstention message without ever calling the LLM. |
+| Decision             | Choice                       | Why                                                                                                                            |
+| -------------------- | ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| **Sparse index**     | `rank_bm25` in-memory        | Simplest to build; rebuilt on ingest/delete. No extra service.                                                                 |
+| **Dense embeddings** | `all-MiniLM-L6-v2` (384-dim) | Fast, local, no API cost, strong quality for its size.                                                                         |
+| **Fusion**           | Custom RRF (k=60)            | Rank-based, so it ignores incompatible score scales between cosine and BM25 — and we control the trace for the insights panel. |
+| **Vector store**     | Qdrant (embedded local mode) | Real vector DB semantics with zero infra; swaps to server mode via one env var.                                                |
+| **LLM**              | Gemini 1.5 Flash             | Generous free tier, fast, good instruction-following for JSON output.                                                          |
+| **Confidence**       | System-calculated            | `0.6 · (avg RRF, normalized) + 0.4 · (citation coverage)` — never trust an LLM to score itself.                                |
+| **Abstention**       | Pre-LLM evidence gate        | If no chunks survive fusion, returns the abstention message without ever calling the LLM.                                      |
 
 ---
 
@@ -63,6 +64,7 @@ Upload → Parse (PDF/DOCX/TXT) → Heading-aware chunking → Dense embedding
 **Prerequisites:** Python 3.11+, Node 18+, and a free [Gemini API key](https://aistudio.google.com/apikey).
 
 ### 1. Clone & configure
+
 ```bash
 git clone <your-repo-url>
 cd search-engine
@@ -72,6 +74,7 @@ cp .env.example .env
 ```
 
 ### 2. Install dependencies
+
 ```bash
 # Backend
 cd backend
@@ -87,11 +90,13 @@ npm install
 ### 3. Run (two terminals)
 
 **Terminal 1 — Backend** → http://localhost:8000
+
 ```powershell
 .\run-backend.ps1
 ```
 
 **Terminal 2 — Frontend** → http://localhost:3000
+
 ```powershell
 .\run-frontend.ps1
 ```
@@ -109,9 +114,11 @@ Open **http://localhost:3000**, upload a document, and ask a question.
 ## 🐳 Run with Docker (optional)
 
 If you have Docker Desktop, this runs Qdrant as a real server:
+
 ```bash
 docker compose up --build
 ```
+
 Frontend → `:3000`, Backend → `:8000`, Qdrant → `:6333`.
 
 ---
@@ -120,13 +127,13 @@ Frontend → `:3000`, Backend → `:8000`, Qdrant → `:6333`.
 
 Base URL: `http://localhost:8000` — interactive docs at `/docs`.
 
-| Method | Endpoint | Description |
-|---|---|---|
-| `POST` | `/ingest/upload` | Upload + parse + chunk + index a PDF/DOCX/TXT (multipart `file`) |
-| `GET` | `/ingest/documents` | List indexed documents with chunk counts |
-| `DELETE` | `/ingest/documents/{id}` | Remove a document from both indexes |
-| `POST` | `/query` | Hybrid retrieval + grounded answer + retrieval trace |
-| `GET` | `/health` | Health check |
+| Method   | Endpoint                 | Description                                                      |
+| -------- | ------------------------ | ---------------------------------------------------------------- |
+| `POST`   | `/ingest/upload`         | Upload + parse + chunk + index a PDF/DOCX/TXT (multipart `file`) |
+| `GET`    | `/ingest/documents`      | List indexed documents with chunk counts                         |
+| `DELETE` | `/ingest/documents/{id}` | Remove a document from both indexes                              |
+| `POST`   | `/query`                 | Hybrid retrieval + grounded answer + retrieval trace             |
+| `GET`    | `/health`                | Health check                                                     |
 
 <details>
 <summary><b>Example <code>/query</code> response</b></summary>
@@ -148,10 +155,23 @@ Base URL: `http://localhost:8000` — interactive docs at `/docs`.
       "rrf_rank": 1
     }
   ],
-  "retrieval_trace": { "dense_count": 20, "bm25_count": 14, "fused_count": 27, "top_chunks": [] },
-  "latency_ms": { "embedding_ms": 12, "dense_ms": 8, "bm25_ms": 3, "rrf_ms": 1, "llm_ms": 640, "total_ms": 664 }
+  "retrieval_trace": {
+    "dense_count": 20,
+    "bm25_count": 14,
+    "fused_count": 27,
+    "top_chunks": []
+  },
+  "latency_ms": {
+    "embedding_ms": 12,
+    "dense_ms": 8,
+    "bm25_ms": 3,
+    "rrf_ms": 1,
+    "llm_ms": 640,
+    "total_ms": 664
+  }
 }
 ```
+
 </details>
 
 ---
@@ -194,14 +214,14 @@ search-engine/
 
 Set in `.env` or as environment variables (see [backend/app/core/config.py](backend/app/core/config.py)):
 
-| Variable | Default | Description |
-|---|---|---|
-| `GEMINI_API_KEY` | — | **Required.** Your Gemini API key |
-| `QDRANT_MODE` | `local` | `local` (embedded on-disk) or `server` (remote URL) |
-| `QDRANT_URL` | `http://localhost:6333` | Used when `QDRANT_MODE=server` |
-| `EMBEDDING_MODEL` | `all-MiniLM-L6-v2` | Sentence-transformers model |
-| `RRF_K` | `60` | RRF constant |
-| `FINAL_TOP_K` | `5` | Chunks passed to the LLM |
+| Variable          | Default                 | Description                                         |
+| ----------------- | ----------------------- | --------------------------------------------------- |
+| `GEMINI_API_KEY`  | —                       | **Required.** Your Gemini API key                   |
+| `QDRANT_MODE`     | `local`                 | `local` (embedded on-disk) or `server` (remote URL) |
+| `QDRANT_URL`      | `http://localhost:6333` | Used when `QDRANT_MODE=server`                      |
+| `EMBEDDING_MODEL` | `all-MiniLM-L6-v2`      | Sentence-transformers model                         |
+| `RRF_K`           | `60`                    | RRF constant                                        |
+| `FINAL_TOP_K`     | `5`                     | Chunks passed to the LLM                            |
 
 ---
 
