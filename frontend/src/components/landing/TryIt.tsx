@@ -94,7 +94,7 @@ export function TryIt() {
             Hybrid dense-sparse RAG with hallucination guardrails.
           </span>
           <span className="font-mono text-[12px] text-text-2">
-            Built by [YOUR TEAM] for the MeetMux hackathon
+            Built by Lumanious for the MeetMux hackathon
           </span>
         </div>
 
@@ -102,7 +102,7 @@ export function TryIt() {
           <div className="flex flex-col gap-[10px]">
             <span className="font-mono text-[11px] text-text-2">PRODUCT</span>
             <Link href={APP_ROUTE} className="no-underline" style={{ color: "#CFCDC7" }}>Open Clarity</Link>
-            <a href="#top" className="no-underline" style={{ color: "#CFCDC7" }}>[YOUR REPO LINK]</a>
+            <a href="https://github.com/Harleen3108/Clarity" target="_blank" rel="noopener noreferrer" className="no-underline" style={{ color: "#CFCDC7" }}>GitHub repo</a>
           </div>
           <div className="flex flex-col gap-[10px]">
             <span className="font-mono text-[11px] text-text-2">PAGE</span>
