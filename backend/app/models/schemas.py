@@ -1,6 +1,5 @@
 from pydantic import BaseModel, Field
-from typing import Optional, List, Any
-import uuid
+from typing import Optional, List
 
 
 class ChunkSchema(BaseModel):
@@ -46,6 +45,7 @@ class QueryResponse(BaseModel):
     citations: List[Citation]
     retrieval_trace: dict
     latency_ms: dict
+    llm_provider: str = "unknown"
 
 
 class DocumentListItem(BaseModel):

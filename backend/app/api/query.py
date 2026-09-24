@@ -1,11 +1,11 @@
 import time
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter
 
 from app.core.embedder import embed_query
 from app.core.bm25_index import bm25_index
 from app.core.qdrant_store import get_client, dense_search
 from app.core.rrf import reciprocal_rank_fusion
-from app.core.llm import generate_answer
+from app.generation.llm import generate_answer
 from app.core.config import settings
 from app.models.schemas import QueryRequest, QueryResponse, Citation
 
@@ -17,7 +17,6 @@ def query_documents(req: QueryRequest):
     latency = {}
     t0 = time.time()
 
-    # --- Dense retrieval ---
     t1 = time.time()
     query_vec = embed_query(req.query)
     latency["embedding_ms"] = round((time.time() - t1) * 1000, 1)
@@ -26,18 +25,15 @@ def query_documents(req: QueryRequest):
     dense_results = dense_search(get_client(), query_vec, top_k=settings.DENSE_TOP_K, filters=req.filters)
     latency["dense_ms"] = round((time.time() - t2) * 1000, 1)
 
-    # --- BM25 retrieval ---
     t3 = time.time()
     bm25_results = bm25_index.search(req.query, top_k=settings.BM25_TOP_K)
     latency["bm25_ms"] = round((time.time() - t3) * 1000, 1)
 
-    # --- RRF fusion ---
     t4 = time.time()
     fused = reciprocal_rank_fusion(dense_results, bm25_results)
     top_chunks = fused[: req.top_k]
     latency["rrf_ms"] = round((time.time() - t4) * 1000, 1)
 
-    # --- Hallucination guard: check we have evidence ---
     if len(top_chunks) < settings.MIN_SUPPORTING_CHUNKS:
         return QueryResponse(
             answer="I couldn't find sufficient evidence in the indexed documents to answer this question.",
@@ -46,15 +42,14 @@ def query_documents(req: QueryRequest):
             citations=[],
             retrieval_trace=_build_trace(dense_results, bm25_results, fused, top_chunks),
             latency_ms={**latency, "llm_ms": 0, "total_ms": round((time.time() - t0) * 1000, 1)},
+            llm_provider="none",
         )
 
-    # --- LLM generation ---
     t5 = time.time()
-    answer, grounded, confidence, raw_citations = generate_answer(req.query, top_chunks)
+    answer, grounded, confidence, raw_citations, llm_provider = generate_answer(req.query, top_chunks)
     latency["llm_ms"] = round((time.time() - t5) * 1000, 1)
     latency["total_ms"] = round((time.time() - t0) * 1000, 1)
 
-    # Build Citation objects from fused chunks (LLM may return subset)
     cited_ids = {c["chunk_id"] for c in raw_citations}
     citations = []
     for chunk in top_chunks:
@@ -79,6 +74,7 @@ def query_documents(req: QueryRequest):
         citations=citations,
         retrieval_trace=_build_trace(dense_results, bm25_results, fused, top_chunks),
         latency_ms=latency,
+        llm_provider=llm_provider,
     )
 
 

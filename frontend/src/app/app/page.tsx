@@ -249,7 +249,16 @@ function Sources({
 }) {
   const [filter, setFilter] = useState("");
   const [status, setStatus] = useState("");
+  const [statusKind, setStatusKind] = useState<"busy" | "ok" | "error">("busy");
   const fileRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (statusKind === "ok") {
+      const t = setTimeout(() => setStatus(""), 5000);
+      return () => clearTimeout(t);
+    }
+  }, [statusKind, status]);
+
   const sc = scanColumn(s.phase === "scan" ? "scan" : "found", s.progress);
   const hitByDoc = new Map<string, TraceHit>();
   trace.top5.forEach((h) => {
@@ -259,12 +268,12 @@ function Sources({
   const upload = async (files: FileList | null) => {
     if (!files?.length) return;
     for (const f of Array.from(files)) {
-      setStatus(`Indexing ${f.name}…`);
+      setStatusKind("busy"); setStatus(`Indexing ${f.name}…`);
       try {
         const r = await uploadDocument(f);
-        setStatus(`Indexed ${f.name} · ${r.chunks_indexed} chunks`);
+        setStatusKind("ok"); setStatus(`Document uploaded · ${r.chunks_indexed} chunks indexed — you may ask`);
       } catch (e) {
-        setStatus(`Failed: ${f.name} · ${e instanceof Error ? e.message : e}`);
+        setStatusKind("error"); setStatus(`Upload failed: ${e instanceof Error ? e.message : String(e)}`);
       }
       await onChange();
     }
@@ -272,12 +281,12 @@ function Sources({
   };
 
   const remove = async (d: Document) => {
-    setStatus(`Removing ${d.document_name}…`);
+    setStatusKind("busy"); setStatus(`Removing ${d.document_name}…`);
     try {
       await deleteDocument(d.document_id);
-      setStatus(`Removed ${d.document_name}`);
+      setStatusKind("ok"); setStatus(`Removed ${d.document_name}`);
     } catch (e) {
-      setStatus(`Failed to remove: ${e instanceof Error ? e.message : e}`);
+      setStatusKind("error"); setStatus(`Failed to remove: ${e instanceof Error ? e.message : String(e)}`);
     }
     await onChange();
   };
@@ -285,7 +294,7 @@ function Sources({
   const shown = docs.filter((d) => d.document_name.toLowerCase().includes(filter.toLowerCase()));
 
   return (
-    <aside className="flex min-h-0 w-[220px] shrink-0 flex-col border-r border-line bg-panel xl:w-[280px]">
+    <aside className="flex min-h-0 w-[180px] shrink-0 flex-col border-r border-line bg-panel lg:w-[200px] xl:w-[280px]">
       <div className="flex flex-col gap-3.5 px-[18px] pb-3.5 pt-5">
         <div className="flex items-center justify-between">
           <h2 className="font-display text-[18px] font-semibold">Sources</h2>
@@ -309,7 +318,18 @@ function Sources({
           placeholder={`Filter ${docs.length} document${docs.length === 1 ? "" : "s"}`}
           className="h-9 rounded-lg border border-border bg-surface px-3 text-[13px] text-text outline-none placeholder:text-[#757575]"
         />
-        {status && <span className="break-words text-[11px] text-text-2">{status}</span>}
+        {status && (
+          <div className={`flex items-start gap-1.5 rounded-lg px-3 py-2 text-[11px] leading-snug ${
+            statusKind === "ok"    ? "bg-ok/10 text-ok" :
+            statusKind === "error" ? "bg-danger/10 text-danger" :
+            "bg-surface-2 text-text-2"
+          }`}>
+            <span className="mt-px shrink-0">
+              {statusKind === "ok" ? "✓" : statusKind === "error" ? "✗" : "…"}
+            </span>
+            <span className="break-words">{status}</span>
+          </div>
+        )}
       </div>
 
       <div className="flex flex-1 flex-col gap-0.5 overflow-auto px-2.5 pb-2.5">
@@ -376,7 +396,7 @@ function IdleState({ docCount }: { docCount: number }) {
         <LegendItem color="bg-dense">meaning match</LegendItem>
         <LegendItem color="bg-both">both</LegendItem>
       </div>
-      <div>
+      <div className="overflow-x-auto">
         <ChunkGrid phase="idle" />
       </div>
     </section>
@@ -441,7 +461,7 @@ function BusyState({ s, stages, trace }: { s: AskState; stages: Stage[]; trace: 
           {rt ? `${rt.bm25_count + rt.dense_count} candidates → RRF → top ${rt.top_k_used}` : "BM25 + dense, in parallel"}
         </span>
       </div>
-      <div>
+      <div className="overflow-x-auto">
         <ChunkGrid phase={scanning ? "scan" : "found"} progress={s.progress} nohits={nohits} trace={trace} />
       </div>
       <p className="text-[13px] text-text-2">
@@ -511,12 +531,13 @@ function AnswerState({ s, res, trace, totalChunks }: { s: AskState; res: QueryRe
               <div
                 key={c.chunk_id}
                 title={c.text}
-                className="flex min-w-[200px] flex-1 flex-col gap-1 rounded-[10px] border border-[#343B45] px-3.5 py-2.5"
+                className="flex min-w-[160px] flex-1 flex-col gap-1 overflow-hidden rounded-[10px] border border-[#343B45] px-3.5 py-2.5"
               >
-                <span className="font-mono text-[11px] text-text-2">
-                  [{i + 1}] RRF #{c.rrf_rank} · DENSE {(c.dense_score ?? 0).toFixed(2)} · BM25 {(c.bm25_score ?? 0).toFixed(2)}
-                </span>
-                <span className="text-[14px] text-text">
+                <div className="flex items-baseline gap-1.5 font-mono text-[11px] text-text-2">
+                  <span className="shrink-0">[{i + 1}] RRF #{c.rrf_rank}</span>
+                  <span className="truncate">· DENSE {(c.dense_score ?? 0).toFixed(2)} · BM25 {(c.bm25_score ?? 0).toFixed(2)}</span>
+                </div>
+                <span className="truncate text-[14px] text-text">
                   {c.document}
                   {c.page != null ? ` · p.${c.page}` : ""}
                 </span>
@@ -525,9 +546,9 @@ function AnswerState({ s, res, trace, totalChunks }: { s: AskState; res: QueryRe
           </div>
         )}
       </article>
-      <div className="flex animate-fade items-start gap-5">
+      <div className="flex animate-fade flex-col gap-4 xl:flex-row xl:items-start">
         <MiniMap trace={trace} />
-        <div className="flex flex-col gap-2 pt-1.5">
+        <div className="flex flex-col gap-2 xl:pt-1.5">
           <Label>SOURCE MAP</Label>
           <span className="text-[14px] leading-[1.55] text-[#CFCDC7]">
             Where the evidence came from, out of {totalChunks.toLocaleString("en-US")} chunks.{" "}
@@ -554,7 +575,9 @@ function RefusedState({ s, res }: { s: AskState; res: QueryResponse }) {
         <p className="font-display text-[22px] font-semibold leading-[1.35]">{res.answer}</p>
         <span className="text-[13px] text-text-2">Logged as a knowledge gap for this session.</span>
       </article>
-      <MiniMap nohits trace={EMPTY_TRACE} />
+      <div className="overflow-x-auto">
+        <MiniMap nohits trace={EMPTY_TRACE} />
+      </div>
     </section>
   );
 }
@@ -649,7 +672,7 @@ function Analytics({
   const m = mix(trace.top5);
 
   return (
-    <aside className="flex w-[260px] shrink-0 flex-col gap-[18px] overflow-auto border-l border-line bg-panel p-5 xl:w-[340px]">
+    <aside className="flex w-[200px] shrink-0 flex-col gap-[18px] overflow-auto border-l border-line bg-panel p-5 lg:w-[240px] xl:w-[340px]">
       <div className="flex items-center justify-between">
         <h2 className="font-display text-[18px] font-semibold">Analytics</h2>
         <span className={`rounded-[10px] border border-border px-2 py-[3px] font-mono text-[11px] ${busy ? "text-ok" : "text-text-2"}`}>
