@@ -45,6 +45,7 @@ export default function ChunkGrid({ phase, progress = 0, nohits = false, trace =
       const idx = gi(c, r);
       const h = hitMap.get(idx);
       const cd = trace.candidates[idx];
+      const onBeam = phase === "scan" && c === sc;
       const beam = phase === "scan" && (c === sc || c === sc - 1);
       const visited = found || c < sc - 1;
       let bg = BAND_OF[c] % 2 ? "#181E25" : "#161B21";
@@ -52,15 +53,20 @@ export default function ChunkGrid({ phase, progress = 0, nohits = false, trace =
       if (found) bg = cd ? "#1B2129" : "#12161B";
       else if (beam) bg = "#3C4856";
       else if (visited) bg = cd ? SOFT[cd] : "#1E252D";
-      if (h && (visited || beam)) {
-        bg = HIT_COLOR[h.type];
-        sh = `0 0 0 3px ${RING[h.type]}`;
+      const isHit = h && (visited || beam);
+      if (isHit) {
+        bg = HIT_COLOR[h!.type];
+        sh = `0 0 0 3px ${RING[h!.type]}`;
       }
+      // The beam column sweeps top-to-bottom (staggered per row) so scanning
+      // reads as active motion, not a flat static bar. A newly-revealed hit
+      // pops in once instead of snapping straight to full colour.
+      const anim = isHit ? "animate-hit-pop" : onBeam ? "animate-cell-sweep" : "";
       cells.push(
         <div
           key={idx}
-          className="h-2.5 w-2.5 rounded-[2px] transition-[background] duration-150 motion-reduce:transition-none"
-          style={{ background: bg, boxShadow: sh }}
+          className={`h-2.5 w-2.5 rounded-[2px] transition-[background] duration-150 motion-reduce:transition-none motion-reduce:animate-none ${anim}`}
+          style={{ background: bg, boxShadow: sh, animationDelay: onBeam ? `${r * 14}ms` : undefined }}
         />,
       );
     }
@@ -71,6 +77,8 @@ export default function ChunkGrid({ phase, progress = 0, nohits = false, trace =
 
   const visible = hits.filter((h) => found || colOf(h.grid_index) <= sc).sort((a, b) => a.grid_index - b.grid_index);
   const slotOf = (h: TraceHit) => (found ? h.rank : visible.indexOf(h));
+
+  const railH = 5 * SLOT_H + 4 * SLOT_GAP;
 
   return (
     <div className="relative h-[270px] w-[611px] shrink-0">
@@ -136,7 +144,7 @@ export default function ChunkGrid({ phase, progress = 0, nohits = false, trace =
       </div>
 
       <span className="absolute left-0 top-[230px] font-mono text-[10px] text-text-3">each cell is one chunk · grouped by document</span>
-      <span className="absolute top-[230px] font-mono text-[10px] text-text-3" style={{ left: RAIL_X }}>
+      <span className="absolute font-mono text-[10px] text-text-3" style={{ left: RAIL_X, top: railH + 8 }}>
         {found ? (nohits ? "nothing passed the gate" : "fused by RRF") : "evidence found so far"}
       </span>
     </div>
@@ -150,14 +158,18 @@ function Slot({ a, b, full, top, dot }: { a: string; b: string; full?: boolean; 
       ? "border-solid border-[#343B45] bg-[#14181D] text-text"
       : "border-dashed border-[#2A3038] text-[#5A6068]";
   return (
-    <div className={`flex h-[45px] items-center gap-2 rounded-lg border px-2.5 ${frame}`}>
+    <div className={`flex items-center gap-2 rounded-lg border px-2.5 ${frame}`} style={{ height: SLOT_H }}>
       <span
         className={`h-2 w-2 shrink-0 rounded ${full ? "" : "border border-[#3A414B]"}`}
         style={dot ? { background: dot } : undefined}
       />
-      <div className="flex min-w-0 flex-col gap-0.5">
-        <span className="truncate text-[12px]">{a}</span>
-        <span className="font-mono text-[10px] text-text-2">{b}</span>
+      <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+        <span className="truncate text-[12px]" title={a}>
+          {a}
+        </span>
+        <span className="truncate font-mono text-[10px] text-text-2" title={b}>
+          {b}
+        </span>
       </div>
     </div>
   );

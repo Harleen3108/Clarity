@@ -12,6 +12,7 @@ from qdrant_client.models import (
     MatchValue,
     FilterSelector,
     ScoredPoint,
+    PayloadSchemaType,
 )
 
 from app.core.config import settings
@@ -53,6 +54,17 @@ def ensure_collection(client: QdrantClient):
                 distance=Distance.COSINE,
             ),
         )
+    # Qdrant Cloud (and any non-local mode) requires a payload index before a
+    # field can be used in a filter, e.g. delete-by-document_id. Safe to call
+    # repeatedly: Qdrant no-ops if the index already exists.
+    try:
+        client.create_payload_index(
+            collection_name=settings.QDRANT_COLLECTION,
+            field_name="document_id",
+            field_schema=PayloadSchemaType.KEYWORD,
+        )
+    except Exception:
+        pass
 
 
 def upsert_chunks(client: QdrantClient, chunks: List[ChunkSchema], embeddings: List[List[float]]):
@@ -100,6 +112,7 @@ def dense_search(
 
 
 def delete_by_document_id(client: QdrantClient, document_id: str):
+    ensure_collection(client)
     client.delete(
         collection_name=settings.QDRANT_COLLECTION,
         points_selector=FilterSelector(

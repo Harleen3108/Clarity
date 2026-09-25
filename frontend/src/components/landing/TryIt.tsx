@@ -11,13 +11,18 @@ const EXAMPLES = [
   "What is the CEO's favourite movie?",
 ];
 
+const CTA_PLACEHOLDER = "What's the reimbursement limit for client dinners?";
+
 export function TryIt() {
   const router = useRouter();
   const [question, setQuestion] = useState("");
 
   const ask = (q: string) => {
-    const query = q.trim();
-    if (query) router.push(askUrl(query));
+    // Clicking "Ask Clarity" with the box still empty should still go
+    // somewhere - fall back to the example shown as the placeholder instead
+    // of silently doing nothing.
+    const query = q.trim() || CTA_PLACEHOLDER;
+    router.push(askUrl(query));
   };
 
   return (
@@ -55,7 +60,7 @@ export function TryIt() {
               type="text"
               value={question}
               onChange={(e) => setQuestion(e.target.value)}
-              placeholder="What's the reimbursement limit for client dinners?"
+              placeholder={CTA_PLACEHOLDER}
               className="flex-grow border-0 bg-transparent text-left text-[17px] text-text outline-none placeholder:text-text-3"
             />
             <button

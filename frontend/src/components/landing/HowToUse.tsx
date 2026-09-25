@@ -1,16 +1,25 @@
 "use client";
-import { useCallback, useRef } from "react";
+import { useCallback, useRef, useState } from "react";
 import Link from "next/link";
 import { useScrollProgress } from "@/hooks/useScrollProgress";
 import { useRevealOnScroll } from "@/hooks/useRevealOnScroll";
 import { APP_ROUTE } from "@/lib/routes";
 
-/** Bordered illustration box shell shared by all four steps. */
-function IlloBox({ children }: { children: React.ReactNode }) {
+/** Bordered illustration box shell shared by all four steps. Lifts and glows
+ * on hover, echoing the progress line below it. */
+function IlloBox({ children, active }: { children: React.ReactNode; active: boolean }) {
   return (
     <div
-      className="relative"
-      style={{ height: 240, border: "1px solid #1A1E24", borderRadius: 16, background: "#0D1014", perspective: 1200 }}
+      className="relative transition-[transform,box-shadow,border-color] duration-300 ease-out"
+      style={{
+        height: 240,
+        border: `1px solid ${active ? "#4A525E" : "#1A1E24"}`,
+        borderRadius: 16,
+        background: "#0D1014",
+        perspective: 1200,
+        transform: active ? "translateY(-4px)" : "none",
+        boxShadow: active ? "0 20px 40px -20px rgba(236,234,228,0.25), 0 0 0 1px rgba(236,234,228,0.06)" : "none",
+      }}
       aria-hidden="true"
     >
       <div
@@ -147,6 +156,8 @@ export function HowToUse() {
   }, []);
   useScrollProgress(ref, onFrame, "through");
 
+  const [hovered, setHovered] = useState<number | null>(null);
+
   return (
     <section
       ref={ref}
@@ -176,10 +187,16 @@ export function HowToUse() {
 
       {/* illustrations */}
       <div data-reveal className="mt-12 grid grid-cols-4 gap-6">
-        {STEPS.map((s) => (
-          <IlloBox key={s.n}>
-            <s.Illo />
-          </IlloBox>
+        {STEPS.map((s, i) => (
+          <div
+            key={s.n}
+            onMouseEnter={() => setHovered(i)}
+            onMouseLeave={() => setHovered((h) => (h === i ? null : h))}
+          >
+            <IlloBox active={hovered === i}>
+              <s.Illo />
+            </IlloBox>
+          </div>
         ))}
       </div>
 
@@ -187,12 +204,39 @@ export function HowToUse() {
       <div className="relative mt-6" style={{ height: 40 }}>
         <div className="absolute left-[20px] right-[20px] top-1/2 h-px -translate-y-1/2" style={{ background: "#262B33" }} />
         <div ref={fillRef} className="absolute left-[20px] top-1/2 h-px -translate-y-1/2" style={{ background: "#ECEAE4", width: "0%" }} />
+        {/* Segment under the hovered step's illustration glows to tie the two together. */}
+        {hovered !== null && (
+          <div
+            className="pointer-events-none absolute top-1/2 h-px -translate-y-1/2 transition-opacity duration-300"
+            style={{
+              left: `calc(${hovered * 25}% + ${hovered === 0 ? 20 : 0}px)`,
+              width: `calc(25% - ${hovered === 0 || hovered === 3 ? 20 : 0}px)`,
+              background: "linear-gradient(90deg, rgba(236,234,228,0), rgba(236,234,228,.9), rgba(236,234,228,0))",
+              boxShadow: "0 0 8px rgba(236,234,228,.5)",
+            }}
+          />
+        )}
         <div className="relative grid grid-cols-4">
-          {STEPS.map((s) => (
-            <div key={s.n} className="flex">
+          {STEPS.map((s, i) => (
+            <div
+              key={s.n}
+              className="flex"
+              onMouseEnter={() => setHovered(i)}
+              onMouseLeave={() => setHovered((h) => (h === i ? null : h))}
+            >
               <span
-                className="flex h-10 w-10 items-center justify-center rounded-full font-mono text-[12px] text-text-2"
-                style={{ background: "#0A0C0F", border: "1px solid #2E343D" }}
+                className="flex h-10 w-10 items-center justify-center rounded-full font-mono text-[12px] transition-[background,color,box-shadow,transform] duration-300 ease-out"
+                style={
+                  hovered === i
+                    ? {
+                        background: "#ECEAE4",
+                        color: "#0A0C0F",
+                        border: "1px solid #ECEAE4",
+                        boxShadow: "0 0 0 4px rgba(236,234,228,.15)",
+                        transform: "scale(1.08)",
+                      }
+                    : { background: "#0A0C0F", color: "#A3A9B1", border: "1px solid #2E343D" }
+                }
               >
                 {s.n}
               </span>

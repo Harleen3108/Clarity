@@ -38,10 +38,22 @@ const config: Config = {
           from: { opacity: "0", transform: "translateY(6px)" },
           to: { opacity: "1", transform: "none" },
         },
+        cellSweep: {
+          "0%": { opacity: "0.35" },
+          "35%": { opacity: "1" },
+          "100%": { opacity: "0.55" },
+        },
+        hitPop: {
+          "0%": { opacity: "0.4", transform: "scale(.6)" },
+          "60%": { opacity: "1", transform: "scale(1.18)" },
+          "100%": { opacity: "1", transform: "scale(1)" },
+        },
       },
       animation: {
         pulse: "pulse 1s ease-in-out infinite",
         fade: "fade .4s ease-out",
+        "cell-sweep": "cellSweep .5s ease-out both",
+        "hit-pop": "hitPop .45s cubic-bezier(.3,1.5,.4,1) both",
       },
     },
   },
