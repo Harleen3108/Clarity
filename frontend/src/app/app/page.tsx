@@ -214,10 +214,6 @@ function TopBar() {
         </Link>
         <Pill>workspace</Pill>
       </div>
-      <nav className="flex items-center gap-5 text-[14px]">
-        <Link href="/library">Library</Link>
-        <Link href="/xray">Retrieval X-ray</Link>
-      </nav>
     </header>
   );
 }
