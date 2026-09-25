@@ -672,7 +672,7 @@ function Analytics({
   const m = mix(trace.top5);
 
   return (
-    <aside className="flex w-[200px] shrink-0 flex-col gap-[18px] overflow-auto border-l border-line bg-panel p-5 lg:w-[240px] xl:w-[340px]">
+    <aside className="flex w-[180px] shrink-0 flex-col gap-[18px] overflow-auto border-l border-line bg-panel p-4 lg:w-[210px] xl:w-[260px]">
       <div className="flex items-center justify-between">
         <h2 className="font-display text-[18px] font-semibold">Analytics</h2>
         <span className={`rounded-[10px] border border-border px-2 py-[3px] font-mono text-[11px] ${busy ? "text-ok" : "text-text-2"}`}>
