@@ -150,12 +150,12 @@ export default function WorkspacePage() {
   });
 
   return (
-    <div className="flex h-screen min-h-[780px] flex-col overflow-x-auto overflow-y-hidden">
+    <div className="flex h-screen min-h-[780px] flex-col overflow-hidden">
       <TopBar />
-      <div className="flex min-h-0 min-w-[900px] flex-1">
+      <div className="flex min-h-0 min-w-[780px] flex-1">
         <Sources s={s} docs={docs} error={docsError} totalChunks={totalChunks} trace={trace} onChange={refreshDocs} />
 
-        <main className="flex min-w-0 flex-1 flex-col gap-4 overflow-hidden px-9 pb-5 pt-6">
+        <main className="flex min-w-0 flex-1 flex-col gap-4 overflow-x-auto overflow-y-hidden px-9 pb-5 pt-6">
           {s.phase === "idle" && <IdleState docCount={docs.length} />}
           {busy && <BusyState s={s} stages={stages} trace={trace} />}
           {s.phase === "answer" && s.res && <AnswerState s={s} res={s.res} trace={trace} totalChunks={totalChunks} />}

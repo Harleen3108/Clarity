@@ -4,10 +4,10 @@ import { EMPTY_TRACE, GRID_COLS as COLS, GRID_ROWS as ROWS, colOf, gridIndex as 
 
 export type GridPhase = "idle" | "scan" | "found";
 
-const P = 15; // cell pitch: 12px cell + 3px gap
-const RAIL_X = 577;
-const SLOT_H = 45;
-const SLOT_GAP = 10.5;
+const P = 12; // cell pitch: 10px cell + 2px gap
+const RAIL_X = 470;
+const SLOT_H = 42;
+const SLOT_GAP = 9;
 const BANDS = [5, 4, 7, 3, 3, 4, 3, 3, 4]; // chunks-per-document columns
 
 export const HIT_COLOR: Record<HitType, string> = { bm25: "#FF9F43", dense: "#6EA8FF", both: "#ECEAE4" };
@@ -59,7 +59,7 @@ export default function ChunkGrid({ phase, progress = 0, nohits = false, trace =
       cells.push(
         <div
           key={idx}
-          className="h-3 w-3 rounded-[2px] transition-[background] duration-150 motion-reduce:transition-none"
+          className="h-2.5 w-2.5 rounded-[2px] transition-[background] duration-150 motion-reduce:transition-none"
           style={{ background: bg, boxShadow: sh }}
         />,
       );
@@ -67,30 +67,30 @@ export default function ChunkGrid({ phase, progress = 0, nohits = false, trace =
   }
 
   const showBeam = phase === "scan" && sc >= 0 && sc <= COLS;
-  const beamX = sc * P + 12;
+  const beamX = sc * P + 10;
 
   const visible = hits.filter((h) => found || colOf(h.grid_index) <= sc).sort((a, b) => a.grid_index - b.grid_index);
   const slotOf = (h: TraceHit) => (found ? h.rank : visible.indexOf(h));
 
   return (
-    <div className="relative h-[300px] w-[748px] shrink-0">
-      <div className="absolute left-0 top-0 grid gap-[3px]" style={{ gridTemplateColumns: `repeat(${COLS}, 12px)` }}>
+    <div className="relative h-[270px] w-[611px] shrink-0">
+      <div className="absolute left-0 top-0 grid gap-[2px]" style={{ gridTemplateColumns: `repeat(${COLS}, 10px)` }}>
         {cells}
       </div>
 
       {showBeam && (
         <>
-          <div className="pointer-events-none absolute top-[-6px] h-[279px] w-10 rounded bg-[rgba(236,234,228,.07)]" style={{ left: beamX - 40 }} />
-          <div className="pointer-events-none absolute top-[-6px] h-[279px] w-[2px] rounded-[1px] bg-text opacity-80" style={{ left: beamX }} />
+          <div className="pointer-events-none absolute top-[-5px] h-[224px] w-10 rounded bg-[rgba(236,234,228,.07)]" style={{ left: beamX - 40 }} />
+          <div className="pointer-events-none absolute top-[-5px] h-[224px] w-[2px] rounded-[1px] bg-text opacity-80" style={{ left: beamX }} />
         </>
       )}
 
-      <svg className="pointer-events-none absolute left-0 top-0 overflow-visible" width="748" height="300">
+      <svg className="pointer-events-none absolute left-0 top-0 overflow-visible" width="611" height="270">
         {visible.map((h) => (
           <line
             key={h.grid_index}
-            x1={colOf(h.grid_index) * P + 6}
-            y1={rowOf(h.grid_index) * P + 6}
+            x1={colOf(h.grid_index) * P + 5}
+            y1={rowOf(h.grid_index) * P + 5}
             x2={RAIL_X}
             y2={slotOf(h) * (SLOT_H + SLOT_GAP) + SLOT_H / 2}
             stroke={HIT_COLOR[h.type]}
@@ -100,7 +100,7 @@ export default function ChunkGrid({ phase, progress = 0, nohits = false, trace =
         ))}
       </svg>
 
-      <div className="absolute top-0 flex w-[171px] flex-col gap-[10.5px]" style={{ left: RAIL_X }}>
+      <div className="absolute top-0 flex w-[141px] flex-col gap-[9px]" style={{ left: RAIL_X }}>
         {[0, 1, 2, 3, 4].map((i) => {
           const h = visible.find((v) => slotOf(v) === i);
           if (!h) {
@@ -122,21 +122,21 @@ export default function ChunkGrid({ phase, progress = 0, nohits = false, trace =
         })}
       </div>
 
-      <div className="absolute left-0 top-[276px] flex w-[537px] gap-[3px]">
+      <div className="absolute left-0 top-[220px] flex w-[430px] gap-[2px]">
         {BANDS.map((n, i) => (
           <div
             key={i}
             className="h-1 rounded-sm"
             style={{
-              width: n * P - 3,
+              width: n * P - 2,
               background: i === 2 && !nohits && (found || sc > 9) ? "#5A6068" : i % 2 ? "#20252C" : "#2A3038",
             }}
           />
         ))}
       </div>
 
-      <span className="absolute left-0 top-[285px] font-mono text-[10px] text-text-3">each cell is one chunk · grouped by document</span>
-      <span className="absolute top-[285px] font-mono text-[10px] text-text-3" style={{ left: RAIL_X }}>
+      <span className="absolute left-0 top-[230px] font-mono text-[10px] text-text-3">each cell is one chunk · grouped by document</span>
+      <span className="absolute top-[230px] font-mono text-[10px] text-text-3" style={{ left: RAIL_X }}>
         {found ? (nohits ? "nothing passed the gate" : "fused by RRF") : "evidence found so far"}
       </span>
     </div>
